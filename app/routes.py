@@ -8,7 +8,7 @@ router = APIRouter()
 async def read_root():
     return {"message": "Welcome to the Evo-KG API"}
 
-@router.post("/create_gene/{gene_name}")
+@router.post("/create_gene/{gene_name}",description="Create a new gene node in the Evo-KG")
 async def get_gene(gene_name: str, db: Neo4jConnection = Depends(get_neo4j_connection)):
     query = """
     CREATE (g:Gene {name: $name})
