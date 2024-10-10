@@ -4,6 +4,10 @@ from .utils.schema import Gene
 
 router = APIRouter()
 
+@router.get("/")
+async def read_root():
+    return {"message": "Welcome to the Evo-KG API"}
+
 @router.post("/create_gene/{gene_name}")
 async def get_gene(gene_name: str, db: Neo4jConnection = Depends(get_neo4j_connection)):
     query = """
