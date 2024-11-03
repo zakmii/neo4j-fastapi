@@ -15,14 +15,14 @@ async def get_gene(gene_id: str = Query(...,description="The gene id to search f
     query = """
     MATCH (g:Gene)
     WHERE g.id = $id
-    RETURN g.id as name;
+    RETURN g;
     """
     result = db.query(query, parameters={"id": gene_id})
     
     if not result:
         raise HTTPException(status_code=404, detail="Gene not found")
     
-    return Gene(name=result[0]["name"])
+    return Gene(id=result[0]["g"]["id"], description=result[0]["g"]["description"])
 
 @router.get("/_get_protein",
             response_model= Protein,

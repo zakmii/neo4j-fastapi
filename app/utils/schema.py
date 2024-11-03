@@ -1,7 +1,8 @@
 from pydantic import BaseModel
 
 class Gene(BaseModel):
-    name: str
+    id: str
+    description: str
 
 class Protein(BaseModel):
     name: str
