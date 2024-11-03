@@ -5,7 +5,7 @@ from .utils.schema import Gene
 router = APIRouter()
 
 @router.get("/_get_gene/{gene_id}",description="Get a gene node from the Evo-KG given its ID")
-async def _get_gene(gene_id: str, db: Neo4jConnection = Depends(get_neo4j_connection),
+async def get_gene(gene_id: str, db: Neo4jConnection = Depends(get_neo4j_connection),
                     summary="Get a gene node from the Evo-KG given its ID",
                     response_description="Return the Gene node from the Evo-KG",
                     operation_id="get_gene"):
@@ -22,7 +22,7 @@ async def _get_gene(gene_id: str, db: Neo4jConnection = Depends(get_neo4j_connec
     return Gene(name=result[0]["name"])
 
 @router.get("/_get_protein/{protein_id}",description="Get a protein node from the Evo-KG given its ID")
-async def _get_protein(protein_id: str, db: Neo4jConnection = Depends(get_neo4j_connection),
+async def get_protein(protein_id: str, db: Neo4jConnection = Depends(get_neo4j_connection),
                        summary="Get a protein node from the Evo-KG given its ID",
                         response_description="Return the Protein node from the Evo-KG",
                        operation_id="get_protein"):
