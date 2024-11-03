@@ -21,4 +21,4 @@ app.add_middleware(
 
 @app.get("/")
 async def read_root():
-    return RedirectResponse(url="/docs")
+    return None
