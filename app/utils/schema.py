@@ -1,13 +1,13 @@
 from pydantic import BaseModel
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
-class Node(BaseModel):
-    properties: Dict[str, Any]
+class NodeProperties(BaseModel):
+    attributes: Dict[str, Any]
 
-class ConnectedNode(BaseModel):
-    node_properties: Node
-    relationship: str
-    connected_node_properties: Node
+class NodeConnection(BaseModel):
+    source_node: NodeProperties
+    relationship_type: str
+    target_node: NodeProperties
 
 class SubgraphResponse(BaseModel):
-    subgraph: List[ConnectedNode]
+    connections: List[NodeConnection]
