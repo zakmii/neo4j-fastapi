@@ -1,63 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from .utils.database import get_neo4j_connection, Neo4jConnection
-from .utils.schema import Gene, Protein
+from .utils.schema import Node, SubgraphResponse, ConnectedNode
 
 router = APIRouter()
-
-@router.get("/_get_gene",
-            response_model= Gene,
-            description="Get a gene node from the Evo-KG given its ID",
-            summary="Get a gene node from the Evo-KG given its ID",
-            response_description="Return the Gene node from the Evo-KG",
-            operation_id="get_gene")
-async def get_gene(gene_id: str = Query(...,description="The gene id to search for"),
-                   db: Neo4jConnection = Depends(get_neo4j_connection)):
-    query = """
-    MATCH (g:Gene)
-    WHERE g.id = $id
-    RETURN g;
-    """
-    result = db.query(query, parameters={"id": gene_id})
-    
-    if not result:
-        raise HTTPException(status_code=404, detail="Gene not found")
-    
-    return Gene(id=result[0]["g"]["id"], description=result[0]["g"]["description"])
-
-@router.get("/_get_protein",
-            response_model= Protein,
-            description="Get a protein node from the Evo-KG given its ID",
-            summary="Get a protein node from the Evo-KG given its ID",
-            response_description="Return the Protein node from the Evo-KG",
-            operation_id="get_protein")
-async def get_protein(protein_id: str = Query(...,description="The protein id to search for"), 
-                      db: Neo4jConnection = Depends(get_neo4j_connection)):
-    query = """
-    MATCH (p:Protein)
-    WHERE p.id = $id
-    RETURN p.id as name
-    """
-    result = db.query(query, parameters={"id": protein_id})
-    
-    if not result:
-        raise HTTPException(status_code=404, detail="Protein not found")
-    
-    return Protein(name=result[0]["name"])
-
-from pydantic import BaseModel
-from typing import Any, Dict, List, Optional
-
-class NodeProperties(BaseModel):
-    properties: Dict[str, Any]
-
-class ConnectedNode(BaseModel):
-    node_properties: NodeProperties
-    relationship: str
-    connected_node_properties: NodeProperties
-
-class SubgraphResponse(BaseModel):
-    subgraph: List[ConnectedNode]
-
 
 @router.get(
     "/subgraph",
@@ -84,18 +29,13 @@ async def get_subgraph(
     
     subgraph = [
         ConnectedNode(
-            node_properties=NodeProperties(properties=record["node_properties"]),
+            node_properties=Node(properties=record["node_properties"]),
             relationship=record["relationship"],
-            connected_node_properties=NodeProperties(properties=record["connected_properties"])
+            connected_node_properties=Node(properties=record["connected_properties"])
         ) for record in result
     ]
     
     return SubgraphResponse(subgraph=subgraph)
-
-class Node(BaseModel):
-    properties: Dict[str, Any]  # Dynamic properties dictionary
-
-from fastapi import Query
 
 @router.get(
     "/get_entity",
