@@ -21,4 +21,4 @@ app.add_middleware(
 
 @app.get("/")
 async def read_root():
-    return None
+    return {"message": "Welcome to the Evo-KG API. Visit /docs for the API documentation."}
