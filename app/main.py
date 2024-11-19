@@ -1,14 +1,14 @@
 from fastapi import FastAPI
-from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
-from .routes import router
+from app import routes, model_routes
 
 app = FastAPI(
     title="Evo-KG API",
     description="API for interacting with the Evo-KG knowledge graph using Neo4j"
 )
 
-app.include_router(router)
+app.include_router(routes.router)
+app.include_router(model_routes.router)
 
 # Allow CORS
 app.add_middleware(

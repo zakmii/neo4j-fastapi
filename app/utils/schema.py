@@ -11,3 +11,12 @@ class NodeConnection(BaseModel):
 
 class SubgraphResponse(BaseModel):
     connections: List[NodeConnection]
+
+class PredictionResult(BaseModel):
+    tail_entity: str
+    score: float
+
+class PredictionResponse(BaseModel):
+    head_entity: str
+    relation: str
+    predictions: List[PredictionResult]
