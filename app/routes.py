@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, Body
+from fastapi import APIRouter, Depends, HTTPException, Query
 from .utils.database import get_neo4j_connection, Neo4jConnection
-from .utils.schema import NodePropertiesQuery, NodeProperties, SubgraphResponse, NodeConnection
+from .utils.schema import NodeProperties, SubgraphResponse, NodeConnection
 from typing import List
 
 router = APIRouter()
@@ -42,31 +42,33 @@ async def get_subgraph(
     return SubgraphResponse(connections=subgraph)
 
 
-@router.post(
+@router.get(
     "/get_entity",
-    response_model=List[NodeProperties],  # List of entity responses
-    description="Retrieve information for multiple entities from the Evo-KG",
-    summary="Fetch multiple entities based on search criteria",
-    response_description="Returns the requested entities with their properties",
+    response_model=NodeProperties,  # Return the properties of any entity node
+    description="Retrieve an entity node from the Evo-KG based on type, property, and value",
+    summary="Fetch an entity node based on search criteria",
+    response_description="Returns the entity node with specified properties",
     operation_id="get_entity"
 )
 async def get_entity(
-    entities: List[NodePropertiesQuery] = Body(..., description="List of entity queries"),
+    entity_type: str = Query(..., description="The type of entity (e.g., Gene, Protein, Disease)"),
+    property_type: str = Query(..., description="The property to search for (e.g., id, name)"),
+    property_value: str = Query(..., description="The value of the property to search for"),
     db: Neo4jConnection = Depends(get_neo4j_connection)
 ):
-    results = []
-
-    for query in entities:
-        neo4j_query = f"""
-        MATCH (e:{query.entity_type})
-        WHERE e.{query.property_type} = $property_value
-        RETURN e;
-        """
-        query_result = db.query(neo4j_query, parameters={"property_value": query.property_value})
-        
-        if not query_result:
-            raise HTTPException(status_code=404, detail=f"{query.entity_type} with {query.property_type}='{query.property_value}' not found")
-        
-        results.append(NodeProperties(attributes=query_result[0]["e"]))
-
-    return results
+    # Query to find the entity by the specified property
+    query = f"""
+    MATCH (e:{entity_type})
+    WHERE e.{property_type} = $property_value
+    RETURN e;
+    """
+    
+    result = db.query(query, parameters={"property_value": property_value})
+    
+    if not result:
+        raise HTTPException(status_code=404, detail=f"{entity_type} with {property_type}='{property_value}' not found")
+    
+    # Return all properties of the node dynamically
+    entity_properties = result[0]["e"]
+    
+    return NodeProperties(attributes=entity_properties)
