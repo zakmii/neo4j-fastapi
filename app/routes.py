@@ -43,14 +43,14 @@ async def get_subgraph(
 
 
 @router.post(
-    "/get_entities",
+    "/get_entity",
     response_model=List[NodeProperties],  # Return a list of nodes with their properties
     description="Retrieve multiple entity nodes from the Evo-KG based on their types, properties, and values",
     summary="Fetch multiple entity nodes based on search criteria",
     response_description="Returns the requested entity nodes with specified properties",
-    operation_id="get_entities"
+    operation_id="get_entity"
 )
-async def get_entities(
+async def get_entity(
     entities: List[dict] = Query(
         ...,
         description=(
