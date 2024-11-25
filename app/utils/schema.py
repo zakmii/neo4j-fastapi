@@ -20,3 +20,10 @@ class PredictionResponse(BaseModel):
     head_entity: str
     relation: str
     predictions: List[PredictionResult]
+    
+class RelatedEntity(BaseModel):
+    entity_properties: dict
+
+class EntityRelationshipsResponse(BaseModel):
+    total_relationships: int
+    related_entities: List[RelatedEntity]

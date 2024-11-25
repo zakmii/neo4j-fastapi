@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from .utils.database import get_neo4j_connection, Neo4jConnection
-from .utils.schema import NodeProperties, SubgraphResponse, NodeConnection
+from .utils.schema import NodeProperties, SubgraphResponse, NodeConnection, RelatedEntity, EntityRelationshipsResponse
 from typing import List
 
 router = APIRouter()
@@ -72,3 +72,43 @@ async def get_entity(
     entity_properties = result[0]["e"]
     
     return NodeProperties(attributes=entity_properties)
+
+@router.get(
+    "/entity_relationships",
+    response_model=EntityRelationshipsResponse,
+    description="Retrieve the count and list of related entities for a specified entity and relationship type",
+    summary="Fetch related entities by entity and relationship type",
+    response_description="Returns the count and details of related entities filtered by relationship type"
+)
+async def get_entity_relationships(
+    entity_type: str = Query(..., description="The type of entity to search for (e.g., Gene, Protein)"),
+    property_name: str = Query(..., description="The property used to identify the entity (e.g., id, name)"),
+    property_value: str = Query(..., description="The value of the property for the entity"),
+    relationship_type: str = Query(..., description="The type of relationship to filter by (e.g., interacts_with, associated_with)"),
+    db: Neo4jConnection = Depends(get_neo4j_connection)
+):
+    # Query to find the relationships and connected nodes filtered by relationship type
+    query = f"""
+    MATCH (e:{entity_type})-[r:{relationship_type}]-(related)
+    WHERE e.{property_name} = $property_value
+    RETURN properties(related) AS entity_properties
+    """
+    
+    result = db.query(query, parameters={"property_value": property_value})
+    
+    if not result:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No relationships of type '{relationship_type}' found for {entity_type} with {property_name}='{property_value}'"
+        )
+    
+    # Prepare response data
+    related_entities = [
+        RelatedEntity(entity_properties=record["entity_properties"])
+        for record in result
+    ]
+    
+    return EntityRelationshipsResponse(
+        total_relationships=len(related_entities),
+        related_entities=related_entities
+    )
