@@ -77,7 +77,8 @@ async def get_entity(
     response_model=EntityRelationshipsResponse,
     description="Retrieve the count and list of related entities for a specified entity and relationship type",
     summary="Fetch related entities by entity and relationship type",
-    response_description="Returns the count and details of related entities filtered by relationship type"
+    response_description="Returns the count and details of related entities filtered by relationship type",
+    operation_id="get_entity_relationships"
 )
 async def get_entity_relationships(
     entity_type: str = Query(..., description="The type of entity to search for (e.g., Gene, Protein)"),
@@ -117,7 +118,8 @@ async def get_entity_relationships(
     response_model=RelationCheckResponse,
     description="Check if a relationship exists between two entities and return the type of relationship",
     summary="Verify relationship between two entities",
-    response_description="Returns whether a relationship exists and its type"
+    response_description="Returns whether a relationship exists and its type",
+    operation_id="check_relationship"
 )
 async def check_relationship(
     entity1_type: str = Query(..., description="The type of the first entity (e.g., Gene, Protein)"),
