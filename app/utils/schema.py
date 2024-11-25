@@ -20,6 +20,14 @@ class PredictionResponse(BaseModel):
     head_entity: str
     relation: str
     predictions: List[PredictionResult]
+
+class PredictionRankResponse(BaseModel):
+    head_entity: str
+    relation: str
+    tail_entity: str
+    rank: int
+    score: float
+    max_score: float
     
 class RelatedEntity(BaseModel):
     entity_properties: dict

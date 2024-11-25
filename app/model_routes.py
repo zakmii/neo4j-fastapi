@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Query
-from .utils.schema import PredictionResponse, PredictionResult
+from .utils.schema import PredictionResponse, PredictionResult, PredictionRankResponse
 from pykeen import predict
 import torch
 import pandas as pd
@@ -56,7 +56,7 @@ def get_EdgeID(edge: str) -> int:
 
 @router.get(
     "/predict_tail",
-    tags=["KGE Link Predictions"],
+    tags=["KGE Predictions"],
     response_model=PredictionResponse,
     description="Predict the top K tail entities given a head entity and relation using a PyKEEN KGE model",
     summary="Get top-K tail predictions for a given head and relation",
@@ -97,3 +97,59 @@ async def predict_tail(
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
+
+@router.get(
+    "/get_prediction_rank",
+    tags=["KGE Predictions"],
+    description="Get the rank and score of a specific tail entity for a given head and relation, along with the maximum score.",
+    summary="Retrieve prediction rank and score for a given tail entity",
+    response_description="Returns the rank, score, and maximum score of the prediction",
+    operation_id="get_prediction_rank",
+    response_model=PredictionRankResponse
+)
+async def get_prediction_rank(
+    head: str = Query(..., description="Head entity for the prediction"),
+    relation: str = Query(..., description="Relation for the prediction"),
+    tail: str = Query(..., description="Tail entity to check for its rank")
+):
+    """
+    Returns the rank, score of the given tail entity, and the maximum score among predictions.
+    """
+    try:
+        # Get IDs for head, relation, and tail
+        head_id = get_NodeID(head)
+        relation_id = get_EdgeID(relation)
+        tail_id = get_NodeID(tail)
+
+        # Perform prediction for all tail entities
+        prediction_df = predict.predict_target(
+            model=kge_model,
+            head=head_id,
+            relation=relation_id
+        ).df
+
+        # Merge the node names into the DataFrame
+        prediction_df = prediction_df.merge(node_mappings, left_on='tail_id', right_on='MappedID', how='left')
+
+        # Find the rank, score of the given tail, and max score
+        prediction_df['rank'] = prediction_df['score'].rank(ascending=False, method="dense")
+        tail_row = prediction_df[prediction_df['tail_id'] == tail_id]
+
+        if tail_row.empty:
+            raise HTTPException(status_code=404, detail=f"Tail entity '{tail}' not found in predictions.")
+
+        tail_rank = int(tail_row['rank'].iloc[0])
+        tail_score = float(tail_row['score'].iloc[0])
+        max_score = float(prediction_df['score'].max())
+
+        # Return structured response
+        return PredictionRankResponse(
+            head_entity=head,
+            relation=relation,
+            tail_entity=tail,
+            rank=tail_rank,
+            score=tail_score,
+            max_score=max_score
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Prediction rank calculation failed: {str(e)}")
