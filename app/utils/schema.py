@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 class NodeProperties(BaseModel):
     attributes: Dict[str, Any]
@@ -27,3 +27,7 @@ class RelatedEntity(BaseModel):
 class EntityRelationshipsResponse(BaseModel):
     total_relationships: int
     related_entities: List[RelatedEntity]
+
+class RelationCheckResponse(BaseModel):
+    exists: bool
+    relationship_type: Optional[str] = None

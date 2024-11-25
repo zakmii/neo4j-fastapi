@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from .utils.database import get_neo4j_connection, Neo4jConnection
-from .utils.schema import NodeProperties, SubgraphResponse, NodeConnection, RelatedEntity, EntityRelationshipsResponse
-from typing import List
+from .utils.schema import NodeProperties, SubgraphResponse, NodeConnection, RelatedEntity, EntityRelationshipsResponse, RelationCheckResponse
 
 router = APIRouter()
 
@@ -111,4 +110,42 @@ async def get_entity_relationships(
     return EntityRelationshipsResponse(
         total_relationships=len(related_entities),
         related_entities=related_entities
+    )
+
+@router.get(
+    "/check_relationship",
+    response_model=RelationCheckResponse,
+    description="Check if a relationship exists between two entities and return the type of relationship",
+    summary="Verify relationship between two entities",
+    response_description="Returns whether a relationship exists and its type"
+)
+async def check_relationship(
+    entity1_type: str = Query(..., description="The type of the first entity (e.g., Gene, Protein)"),
+    entity1_property_name: str = Query(..., description="The property name to identify the first entity (e.g., id, name)"),
+    entity1_property_value: str = Query(..., description="The property value to identify the first entity"),
+    entity2_type: str = Query(..., description="The type of the second entity (e.g., Disease, Protein)"),
+    entity2_property_name: str = Query(..., description="The property name to identify the second entity (e.g., id, name)"),
+    entity2_property_value: str = Query(..., description="The property value to identify the second entity"),
+    db: Neo4jConnection = Depends(get_neo4j_connection)
+):
+    # Query to check if a relationship exists between the two entities
+    query = f"""
+    MATCH (e1:{entity1_type})-[r]-(e2:{entity2_type})
+    WHERE e1.{entity1_property_name} = $entity1_property_value
+      AND e2.{entity2_property_name} = $entity2_property_value
+    RETURN type(r) AS relationship_type
+    """
+    
+    result = db.query(query, parameters={
+        "entity1_property_value": entity1_property_value,
+        "entity2_property_value": entity2_property_value
+    })
+    
+    if not result:
+        return RelationCheckResponse(exists=False)
+    
+    # If a relationship exists, return the type
+    return RelationCheckResponse(
+        exists=True,
+        relationship_type=result[0]["relationship_type"]
     )
