@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from .utils.database import get_neo4j_connection, Neo4jConnection
 from .utils.schema import NodeProperties, SubgraphResponse, NodeConnection, RelatedEntity, EntityRelationshipsResponse, RelationCheckResponse
+from typing import Optional
 
 router = APIRouter()
 
@@ -75,31 +76,43 @@ async def get_entity(
 @router.get(
     "/entity_relationships",
     response_model=EntityRelationshipsResponse,
-    description="Retrieve the count and list of related entities for a specified entity and relationship type",
-    summary="Fetch related entities by entity and relationship type",
-    response_description="Returns the count and details of related entities filtered by relationship type",
+    description="Retrieve the count and list of related entities for a specified entity and optionally by relationship type",
+    summary="Fetch related entities by entity and optionally relationship type",
+    response_description="Returns the count and details of related entities, optionally filtered by relationship type",
     operation_id="get_entity_relationships"
 )
 async def get_entity_relationships(
     entity_type: str = Query(..., description="The type of entity to search for (e.g., Gene, Protein)"),
     property_name: str = Query(..., description="The property used to identify the entity (e.g., id, name)"),
     property_value: str = Query(..., description="The value of the property for the entity"),
-    relationship_type: str = Query(..., description="The type of relationship to filter by (e.g., interacts_with, associated_with)"),
+    relationship_type: Optional[str] = Query(None, description="The type of relationship to filter by (optional)"),
     db: Neo4jConnection = Depends(get_neo4j_connection)
 ):
-    # Query to find the relationships and connected nodes filtered by relationship type
-    query = f"""
-    MATCH (e:{entity_type})-[r:{relationship_type}]-(related)
-    WHERE e.{property_name} = $property_value
-    RETURN properties(related) AS entity_properties
     """
+    Fetch related entities and optionally filter by relationship type.
+    """
+    # Build the Cypher query dynamically based on whether relationship_type is provided
+    if relationship_type:
+        query = f"""
+        MATCH (e:{entity_type})-[r:{relationship_type}]-(related)
+        WHERE e.{property_name} = $property_value
+        RETURN properties(related) AS entity_properties
+        """
+    else:
+        query = f"""
+        MATCH (e:{entity_type})--(related)
+        WHERE e.{property_name} = $property_value
+        RETURN properties(related) AS entity_properties
+        """
     
+    # Execute the query
     result = db.query(query, parameters={"property_value": property_value})
     
     if not result:
+        relationship_message = f" of type '{relationship_type}'" if relationship_type else ""
         raise HTTPException(
             status_code=404,
-            detail=f"No relationships of type '{relationship_type}' found for {entity_type} with {property_name}='{property_value}'"
+            detail=f"No relationships{relationship_message} found for {entity_type} with {property_name}='{property_value}'"
         )
     
     # Prepare response data
@@ -112,6 +125,7 @@ async def get_entity_relationships(
         total_relationships=len(related_entities),
         related_entities=related_entities
     )
+
 
 @router.get(
     "/check_relationship",
