@@ -58,7 +58,7 @@ async def get_entity(
     # Query to find the entity by the specified property
     query = f"""
     MATCH (e:{entity_type})
-    WHERE e.{property_type} = $property_value
+    WHERE LOWER(e.{property_type}) = LOWER($property_value)
     RETURN e;
     """
     
