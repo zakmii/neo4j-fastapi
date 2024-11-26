@@ -97,12 +97,14 @@ async def get_entity_relationships(
         MATCH (e:{entity_type})-[r:{relationship_type}]-(related)
         WHERE e.{property_name} = $property_value
         RETURN properties(related) AS entity_properties
+        LIMIT 30
         """
     else:
         query = f"""
         MATCH (e:{entity_type})--(related)
         WHERE e.{property_name} = $property_value
         RETURN properties(related) AS entity_properties
+        LIMIT 30
         """
     
     # Execute the query
