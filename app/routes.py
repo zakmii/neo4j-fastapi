@@ -89,28 +89,42 @@ async def get_entity_relationships(
     db: Neo4jConnection = Depends(get_neo4j_connection)
 ):
     """
-    Fetch related entities and optionally filter by relationship type.
+    Fetch related entities, optionally filter by relationship type, and limit details to 20 entities while providing the total count.
     """
     # Build the Cypher query dynamically based on whether relationship_type is provided
     if relationship_type:
-        query = f"""
+        count_query = f"""
+        MATCH (e:{entity_type})-[r:{relationship_type}]-(related)
+        WHERE e.{property_name} = $property_value
+        RETURN count(related) AS total_count
+        """
+        detail_query = f"""
         MATCH (e:{entity_type})-[r:{relationship_type}]-(related)
         WHERE e.{property_name} = $property_value
         RETURN properties(related) AS entity_properties
-        LIMIT 30
+        LIMIT 20
         """
     else:
-        query = f"""
+        count_query = f"""
+        MATCH (e:{entity_type})--(related)
+        WHERE e.{property_name} = $property_value
+        RETURN count(related) AS total_count
+        """
+        detail_query = f"""
         MATCH (e:{entity_type})--(related)
         WHERE e.{property_name} = $property_value
         RETURN properties(related) AS entity_properties
-        LIMIT 30
+        LIMIT 20
         """
     
-    # Execute the query
-    result = db.query(query, parameters={"property_value": property_value})
+    # Execute the count query
+    count_result = db.query(count_query, parameters={"property_value": property_value})
+    total_count = count_result[0]["total_count"] if count_result else 0
+
+    # Execute the detail query
+    detail_result = db.query(detail_query, parameters={"property_value": property_value})
     
-    if not result:
+    if not detail_result:
         relationship_message = f" of type '{relationship_type}'" if relationship_type else ""
         raise HTTPException(
             status_code=404,
@@ -120,11 +134,11 @@ async def get_entity_relationships(
     # Prepare response data
     related_entities = [
         RelatedEntity(entity_properties=record["entity_properties"])
-        for record in result
+        for record in detail_result
     ]
     
     return EntityRelationshipsResponse(
-        total_relationships=len(related_entities),
+        total_relationships=total_count,
         related_entities=related_entities
     )
 
