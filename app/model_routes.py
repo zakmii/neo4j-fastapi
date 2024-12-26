@@ -12,7 +12,7 @@ kge_model = torch.load("app/data/model_epoch_500.pkl")
 # Load the mappings for the entities and relations
 node_mappings = pd.read_pickle("app/data/HYCDZM_node_id.pkl")
 
-edge_mapping = { 'drug_drug' : 0,
+edge_mapping = {'drug_drug' : 0,
                 'drug_gene' : 1,
                 'gene_drug' : 2,
                 'drug_protein' : 3,
@@ -32,16 +32,16 @@ edge_mapping = { 'drug_drug' : 0,
                 'gene_protein': 17,
                 'protein_disease': 18,
                 'protein_gene': 19,
-                'drug_AgingPhenotype': 20,
-                'gene_AgingPhenotype': 21,
+                'drug_aging_phenotype': 20,
+                'gene_aging_phenotype': 21,
                 'gene_hallmark': 22,
                 'metabolite_metabolite': 23,
                 'gene-hallmark': 24,
                 'gene_gene(genomic instability)': 25,
                 'gene_tissue': 26,
                 'protein_tissue': 27,
-                'protein_AgingPhenotype': 28,
-                'intervention_hallmark': 29,
+                'protein_aging_phenotype': 28,
+                'aa_intervention_hallmark': 29,
                 'hallmark_phenotype': 30
                 }
 
