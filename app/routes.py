@@ -18,11 +18,24 @@ async def get_subgraph(
     property_value: str = Query(..., description="Value of the property to search for"),
     db: Neo4jConnection = Depends(get_neo4j_connection)
 ):
-    # Dynamic query to find nodes by the given property
+    """
+    Retrieve a subgraph of related nodes while limiting the connections to 10.
+    """
+
+    #This is done to optimize the query by removing unnecessary properties
+    #Makes the query faster and reduces the data transfer
+    ignore_properties_source = ['sequence','seq', 'smiles']
+    ignore_properties_target = ['sequence','seq', 'smiles','detail','details']
+
     query = f"""
     MATCH (n {{{property_name}: $property_value}})-[r]-(connected)
-    RETURN properties(n) AS node_properties, type(r) AS relationship, properties(connected) AS connected_properties
-    LIMIT 30
+    WITH n, r, connected
+    RETURN 
+        apoc.map.removeKeys(properties(n), {str(ignore_properties_source)}) AS node_properties,
+        collect(apoc.map.fromPairs([
+            ['relationship_type', type(r)],
+            ['connected_properties', apoc.map.removeKeys(properties(connected), {str(ignore_properties_target)})]
+        ]))[0..10] AS connections
     """
     
     result = db.query(query, parameters={"property_value": property_value})
@@ -30,17 +43,24 @@ async def get_subgraph(
     if not result:
         raise HTTPException(status_code=404, detail="Node not found or no connections available")
     
-    # Construct the subgraph response from the query result
-    subgraph = [
-        NodeConnection(
-            source_node=NodeProperties(attributes=record["node_properties"]),
-            relationship_type=record["relationship"],
-            target_node=NodeProperties(attributes=record["connected_properties"])
-        ) for record in result
-    ]
+    # Extract the source node and connections from the query result
+    source_node = None
+    connections = []
+    for record in result:
+        if source_node is None:
+            source_node = NodeProperties(attributes=record["node_properties"])
+        connections.extend([
+            NodeConnection(
+                relationship_type=connection["relationship_type"],
+                target_node=NodeProperties(attributes=connection["connected_properties"])
+            )
+            for connection in record["connections"]
+        ])
     
-    return SubgraphResponse(connections=subgraph)
-
+    return SubgraphResponse(
+        source_node=source_node,
+        connections=connections
+    )
 
 @router.get(
     "/get_entity",

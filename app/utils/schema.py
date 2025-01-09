@@ -5,11 +5,11 @@ class NodeProperties(BaseModel):
     attributes: Dict[str, Any]
 
 class NodeConnection(BaseModel):
-    source_node: NodeProperties
     relationship_type: str
     target_node: NodeProperties
 
 class SubgraphResponse(BaseModel):
+    source_node: NodeProperties
     connections: List[NodeConnection]
 
 class PredictionResult(BaseModel):
