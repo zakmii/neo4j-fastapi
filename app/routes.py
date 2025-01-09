@@ -111,50 +111,43 @@ async def get_entity_relationships(
     """
     Fetch related entities, optionally filter by relationship type, and limit details to 20 entities while providing the total count.
     """
-    # Build the Cypher query dynamically based on whether relationship_type is provided
-    if relationship_type:
-        count_query = f"""
-        MATCH (e:{entity_type})-[r:{relationship_type}]-(related)
-        WHERE e.{property_name} = $property_value
-        RETURN count(related) AS total_count
-        """
-        detail_query = f"""
-        MATCH (e:{entity_type})-[r:{relationship_type}]-(related)
-        WHERE e.{property_name} = $property_value
-        RETURN properties(related) AS entity_properties
-        LIMIT 20
-        """
-    else:
-        count_query = f"""
-        MATCH (e:{entity_type})--(related)
-        WHERE e.{property_name} = $property_value
-        RETURN count(related) AS total_count
-        """
-        detail_query = f"""
-        MATCH (e:{entity_type})--(related)
-        WHERE e.{property_name} = $property_value
-        RETURN properties(related) AS entity_properties
-        LIMIT 20
-        """
-    
-    # Execute the count query
-    count_result = db.query(count_query, parameters={"property_value": property_value})
-    total_count = count_result[0]["total_count"] if count_result else 0
+    # List of properties to exclude for optimization
+    ignore_properties = ['sequence', 'seq', 'smiles', 'detail', 'details']
 
-    # Execute the detail query
-    detail_result = db.query(detail_query, parameters={"property_value": property_value})
+    # Define query depending on whether relationship_type is provided
+    if relationship_type:
+        # Apply LOWER() in the query for case-insensitive relationship matching
+        query = f"""
+        MATCH (e:{entity_type})-[r]-(related)
+        WHERE e.{property_name} = $property_value AND LOWER(type(r)) = LOWER($relationship_type)
+        RETURN count(related) AS total_count,
+               collect(apoc.map.removeKeys(properties(related), {str(ignore_properties)}))[0..20] AS entity_properties
+        """
+        params = {"property_value": property_value, "relationship_type": relationship_type}
+    else:
+        query = f"""
+        MATCH (e:{entity_type})--(related)
+        WHERE e.{property_name} = $property_value
+        RETURN count(related) AS total_count,
+               collect(apoc.map.removeKeys(properties(related), {str(ignore_properties)}))[0..20] AS entity_properties
+        """
+        params = {"property_value": property_value}
+
+    # Execute the query
+    result = db.query(query, parameters=params)
     
-    if not detail_result:
+    if not result:
         relationship_message = f" of type '{relationship_type}'" if relationship_type else ""
         raise HTTPException(
             status_code=404,
             detail=f"No relationships{relationship_message} found for {entity_type} with {property_name}='{property_value}'"
         )
     
-    # Prepare response data
+    # Extract the total count and related entities
+    total_count = result[0]["total_count"]
     related_entities = [
-        RelatedEntity(entity_properties=record["entity_properties"])
-        for record in detail_result
+        RelatedEntity(entity_properties=entity)
+        for entity in result[0]["entity_properties"]
     ]
     
     return EntityRelationshipsResponse(
