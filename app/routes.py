@@ -24,8 +24,8 @@ async def get_subgraph(
 
     #This is done to optimize the query by removing unnecessary properties
     #Makes the query faster and reduces the data transfer
-    ignore_properties_source = ['sequence','seq', 'smiles']
-    ignore_properties_target = ['sequence','seq', 'smiles','detail','details']
+    ignore_properties_source = ['sequence','seq', 'smiles','detail','details']
+    ignore_properties_target = ['sequence','seq', 'smiles','detail','details','description']
 
     query = f"""
     MATCH (n {{{property_name}: $property_value}})-[r]-(connected)
@@ -112,7 +112,7 @@ async def get_entity_relationships(
     Fetch related entities, optionally filter by relationship type, and limit details to 20 entities while providing the total count.
     """
     # List of properties to exclude for optimization
-    ignore_properties = ['sequence', 'seq', 'smiles', 'detail', 'details']
+    ignore_properties = ['sequence', 'seq', 'smiles', 'detail', 'details', 'description']
 
     # Define query depending on whether relationship_type is provided
     if relationship_type:
