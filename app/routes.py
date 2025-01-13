@@ -142,9 +142,9 @@ async def get_similar_entities(
 @router.get(
     "/find_entity",
     response_model=EntityResponse,
-    description="Fetch an entity node, either by exact match or similar entities if not found",
+    description="Retrieve an entity node from the Evo-KG based on type, property, and value, either by exact match or similar entities if not found",
     summary="Fetch an entity node or similar ones based on the search criteria",
-    response_description="Returns the entity or a list of similar entities",
+    response_description="Returns the entity node with specified properties or a list of similar entities",
     operation_id="find_entity"
 )
 async def find_entity(
