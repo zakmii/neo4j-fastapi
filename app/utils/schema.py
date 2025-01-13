@@ -1,8 +1,16 @@
 from pydantic import BaseModel
-from typing import Any, Dict, List, Optional
+from typing import Union, List, Optional
 
 class NodeProperties(BaseModel):
-    attributes: Dict[str, Any]
+    attributes: dict
+
+class SimilarEntity(BaseModel):
+    name: Optional[str] = None
+    id: Optional[str] = None
+
+class EntityResponse(BaseModel):
+    entity: Union[NodeProperties, List[SimilarEntity]]
+    message: Optional[str] = None
 
 class NodeConnection(BaseModel):
     relationship_type: str

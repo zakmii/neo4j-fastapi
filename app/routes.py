@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from .utils.database import get_neo4j_connection, Neo4jConnection
-from .utils.schema import NodeProperties, SubgraphResponse, NodeConnection, RelatedEntity, EntityRelationshipsResponse, RelationCheckResponse
+from .utils.schema import NodeProperties,SimilarEntity,EntityResponse, SubgraphResponse, NodeConnection, RelatedEntity, EntityRelationshipsResponse, RelationCheckResponse
 from typing import Optional
 
 router = APIRouter()
@@ -64,7 +64,7 @@ async def get_subgraph(
 
 @router.get(
     "/get_entity",
-    response_model=NodeProperties,  # Return the properties of any entity node
+    response_model=EntityResponse,
     description="Retrieve an entity node from the Evo-KG based on type, property, and value",
     summary="Fetch an entity node based on search criteria",
     response_description="Returns the entity node with specified properties",
@@ -91,7 +91,75 @@ async def get_entity(
     # Return all properties of the node dynamically
     entity_properties = result[0]["e"]
     
-    return NodeProperties(attributes=entity_properties)
+    return EntityResponse(entity=NodeProperties(attributes=entity_properties))
+
+@router.get(
+    "/get_similar_entities",
+    response_model=EntityResponse,
+    description="Retrieve a list of entities similar to the given property value using Levenshtein similarity",
+    summary="Fetch similar entities based on Levenshtein similarity",
+    response_description="Returns a list of similar entities (IDs or names)",
+    operation_id="get_similar_entities"
+)
+async def get_similar_entities(
+    entity_type: str = Query(..., description="The type of entity (e.g., Gene, Protein, Disease)"),
+    property_type: str = Query(..., description="The property to compare for similarity (e.g., name, description)"),
+    property_value: str = Query(..., description="The value to compare for similarity"),
+    similarity_threshold: float = Query(0.8, description="The Levenshtein similarity threshold (default is 0.8)"),
+    db: Neo4jConnection = Depends(get_neo4j_connection)
+):
+    """
+    Retrieve a list of entities with a property value similar to the specified value,
+    using the Levenshtein similarity threshold to filter results.
+    """
+    # Query to find similar entities
+    query = f"""
+    MATCH (e:{entity_type})
+    WHERE apoc.text.levenshteinSimilarity(LOWER(e.{property_type}), LOWER($property_value)) >= $similarity_threshold
+    RETURN e.{property_type} AS entity_property
+    """
+    
+    result = db.query(query, parameters={"property_value": property_value, "similarity_threshold": similarity_threshold})
+    
+    if not result:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No similar entities found for {entity_type} with {property_type}='{property_value}'"
+        )
+    
+    similar_entities = []
+    for record in result:
+        entity_property = record["entity_property"]
+        if property_type == "name":
+            similar_entities.append({"name": entity_property})
+        elif property_type == "id":
+            similar_entities.append({"id": entity_property})
+    
+    return EntityResponse(entity = [SimilarEntity(**entity) for entity in similar_entities],
+                          message = f"Similar entities found for {entity_type} with '{property_type}' = '{property_value}'")
+
+# Wrapper endpoint to handle both exact match and similarity fallback
+@router.get(
+    "/find_entity",
+    response_model=EntityResponse,
+    description="Fetch an entity node, either by exact match or similar entities if not found",
+    summary="Fetch an entity node or similar ones based on the search criteria",
+    response_description="Returns the entity or a list of similar entities",
+    operation_id="find_entity"
+)
+async def find_entity(
+    entity_type: str = Query(..., description="The type of entity (e.g., Gene, Protein, Disease)"),
+    property_type: str = Query(..., description="The property to search for (e.g., id, name)"),
+    property_value: str = Query(..., description="The value of the property to search for"),
+    similarity_threshold: float = Query(0.8, description="The Levenshtein similarity threshold (default is 0.8)"),
+    db: Neo4jConnection = Depends(get_neo4j_connection)
+):
+    # First try to find the exact entity
+    try:
+        return await get_entity(entity_type, property_type, property_value, db)
+    except HTTPException:
+        # If exact match fails, try to find similar entities
+        return await get_similar_entities(entity_type, property_type, property_value, similarity_threshold, db)
 
 @router.get(
     "/entity_relationships",
