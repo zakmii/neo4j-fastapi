@@ -96,8 +96,8 @@ async def get_entity(
 @router.get(
     "/get_similar_entities",
     response_model=EntityResponse,
-    description="Retrieve a list of entities similar to the given property value using Levenshtein similarity",
-    summary="Fetch similar entities based on Levenshtein similarity",
+    description="Retrieve a list of entities similar to the given property value using Sørensen–Dice similarity",
+    summary="Fetch similar entities based on Sørensen–Dice similarity",
     response_description="Returns a list of similar entities (IDs or names)",
     operation_id="get_similar_entities"
 )
@@ -105,17 +105,17 @@ async def get_similar_entities(
     entity_type: str = Query(..., description="The type of entity (e.g., Gene, Protein, Disease)"),
     property_type: str = Query(..., description="The property to compare for similarity (e.g., name, description)"),
     property_value: str = Query(..., description="The value to compare for similarity"),
-    similarity_threshold: float = Query(0.8, description="The Levenshtein similarity threshold (default is 0.8)"),
+    similarity_threshold: float = Query(0.8, description="The Sørensen–Dice similarity threshold (default is 0.8)"),
     db: Neo4jConnection = Depends(get_neo4j_connection)
 ):
     """
     Retrieve a list of entities with a property value similar to the specified value,
-    using the Levenshtein similarity threshold to filter results.
+    using the Sørensen–Dice similarity threshold to filter results.
     """
     # Query to find similar entities
     query = f"""
     MATCH (e:{entity_type})
-    WHERE apoc.text.levenshteinSimilarity(LOWER(e.{property_type}), LOWER($property_value)) >= $similarity_threshold
+    WHERE apoc.text.sorensenDiceSimilarity(LOWER(e.{property_type}), LOWER($property_value)) >= $similarity_threshold
     RETURN e.{property_type} AS entity_property
     """
     
@@ -151,7 +151,7 @@ async def find_entity(
     entity_type: str = Query(..., description="The type of entity (e.g., Gene, Protein, Disease)"),
     property_type: str = Query(..., description="The property to search for (e.g., id, name)"),
     property_value: str = Query(..., description="The value of the property to search for"),
-    similarity_threshold: float = Query(0.8, description="The Levenshtein similarity threshold (default is 0.8)"),
+    similarity_threshold: float = Query(0.8, description="The Sørensen–Dice similarity threshold (default is 0.8)"),
     db: Neo4jConnection = Depends(get_neo4j_connection)
 ):
     # First try to find the exact entity
