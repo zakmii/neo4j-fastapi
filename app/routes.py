@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from .utils.database import get_neo4j_connection, Neo4jConnection
 from .utils.schema import NodeProperties,SimilarEntity,EntityResponse, SubgraphResponse, NodeConnection, RelatedEntity, EntityRelationshipsResponse, RelationCheckResponse
-from typing import Optional
+from typing import Optional, List, Dict, Any
 
 router = APIRouter()
 
@@ -160,6 +160,52 @@ async def find_entity(
     except HTTPException:
         # If exact match fails, try to find similar entities
         return await get_similar_entities(entity_type, property_type, property_value, similarity_threshold, db)
+
+@router.get(
+    "/search_biological_entities",
+    response_model=List[Dict[str, Any]],
+    description="Search biological entities such as Disease, Phenotype, AA_Intervention(Anti-aging intervention), or Tissue by name",
+    summary="Search for biological entities by name",
+    response_description="Returns a list of entity types with their top 3 matching entities",
+    operation_id="search_biological_entities"
+)
+async def search_biological_entities(
+    targetTerm: str = Query(..., description="The name or term to search for in biological entities"),
+    db: Neo4jConnection = Depends(get_neo4j_connection)
+):
+    """
+    Search for biological entities such as Disease, Phenotype, AA_Intervention(Anti-aging intervention), or Tissue by name.
+    """
+    query = """
+    WITH $targetTerm AS targetTerm
+    MATCH (e)
+    WHERE (e:Disease OR e:Phenotype OR e:AA_Intervention OR e:Tissue) AND toLower(e.name) CONTAINS toLower(targetTerm)
+    WITH e, labels(e) AS entityTypes
+    ORDER BY entityTypes[0] ASC, size(e.name) ASC
+    WITH entityTypes[0] AS entityType, COLLECT({name: e.name, species: e.species}) AS entities
+    WITH entityType, entities[0..3] AS topEntities
+    RETURN entityType, topEntities;
+    """
+    
+    result = db.query(query, parameters={"targetTerm": targetTerm})
+    
+    if not result:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No matching biological entities found for the term '{targetTerm}'"
+        )
+    
+    response = [
+        {
+            "entityType": record["entityType"],
+            "topEntities": record["topEntities"]
+        }
+        for record in result
+    ]
+    
+    return response
+
+
 
 @router.get(
     "/entity_relationships",
