@@ -117,6 +117,7 @@ async def get_similar_entities(
     MATCH (e:{entity_type})
     WHERE apoc.text.sorensenDiceSimilarity(LOWER(e.{property_type}), LOWER($property_value)) >= $similarity_threshold
     RETURN e.{property_type} AS entity_property
+    LIMIT 10;
     """
     
     result = db.query(query, parameters={"property_value": property_value, "similarity_threshold": similarity_threshold})
