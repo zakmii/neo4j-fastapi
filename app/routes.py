@@ -165,7 +165,7 @@ async def find_entity(
 @router.get(
     "/search_biological_entities",
     response_model=List[Dict[str, Any]],
-    description="Search biological entities such as Disease, Phenotype, AA_Intervention(Anti-aging intervention), or Tissue by name",
+    description="Search biological entities such as Disease, Phenotype, AA_Intervention (Anti-aging intervention), Epigenetic_Modification (name: hypermethylation or hypomethylation), Aging_Phenotype (name: Anti-Aging or Pro-Aging or Aging), Hallmark, Metabolite or Tissue by name",
     summary="Search for biological entities by name",
     response_description="Returns a list of entity types with their top 3 matching entities",
     operation_id="search_biological_entities"
@@ -175,16 +175,16 @@ async def search_biological_entities(
     db: Neo4jConnection = Depends(get_neo4j_connection)
 ):
     """
-    Search for biological entities such as Disease, Phenotype, AA_Intervention(Anti-aging intervention), or Tissue by name.
+    Search for biological entities such as Disease, Phenotype, AA_Intervention (Anti-aging intervention), Epigenetic_Modification (name: hypermethylation or hypomethylation), Aging_Phenotype (name: Anti-Aging or Pro-Aging or Aging), Hallmark, Metabolite or Tissue by name.
     """
     query = """
     WITH $targetTerm AS targetTerm
     MATCH (e)
-    WHERE (e:Disease OR e:Phenotype OR e:AA_Intervention OR e:Tissue) AND toLower(e.name) CONTAINS toLower(targetTerm)
+    WHERE (e:Disease OR e:Phenotype OR e:AA_Intervention OR e:Tissue OR e:Aging_Phenotype OR e:Epigenetic_Modification OR e:Hallmark OR e:Metabolite) AND toLower(e.name) CONTAINS toLower(targetTerm)
     WITH e, labels(e) AS entityTypes
     ORDER BY entityTypes[0] ASC, size(e.name) ASC
     WITH entityTypes[0] AS entityType, COLLECT({name: e.name, species: e.species}) AS entities
-    WITH entityType, entities[0..3] AS topEntities
+    WITH entityType, entities[0..5] AS topEntities
     RETURN entityType, topEntities;
     """
     
