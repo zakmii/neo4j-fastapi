@@ -12,6 +12,12 @@ kge_model = torch.load("app/data/model_epoch_500.pkl")
 # Load the mappings for the entities and relations
 node_mappings = pd.read_pickle("app/data/HYCDZM_node_id.pkl")
 
+# Load the mappings of C_ID with chemical name
+chemical_mappings = pd.read_csv("app\data\ALL_KG_ALL_CHEMICALS.csv")
+
+# Convert chemical mapping to a dictionary for fast lookups
+chemical_mapping_dict = dict(zip(chemical_mappings['MY_UNIQ_ID'], chemical_mappings['Chemicals']))
+
 edge_mapping = {'drug_drug' : 0,
                 'drug_gene' : 1,
                 'gene_drug' : 2,
@@ -58,7 +64,7 @@ def get_EdgeID(edge: str) -> int:
     "/predict_tail",
     tags=["KGE Predictions"],
     response_model=PredictionResponse,
-    description="Predict the top K tail entities given a head entity and relation using a PyKEEN KGE model",
+    description="Predict the top K tail entities given Gene id, Protein id, Chemical id, Disease name, Phenotype name, AA_Intervention name, Epigenetic_Modification name, Aging_Phenotype name, Hallmark name, Metabolite name, and Tissue name and relation using a PyKEEN KGE model",
     summary="Get top-K tail predictions for a given head and relation",
     operation_id="predict_tail"
 )
@@ -83,6 +89,9 @@ async def predict_tail(
 
         df = df.merge(node_mappings, left_on='tail_id', right_on='MappedID', how='left')
         df = df[['Node', 'score']]
+
+        # Replace tail names with corresponding Chemicals names using mapping
+        #df['Node'] = df['Node'].apply(lambda node: chemical_mapping_dict.get(node, node))
 
         # Format the result for the response
         predictions = [
