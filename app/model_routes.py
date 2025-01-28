@@ -13,7 +13,7 @@ kge_model = torch.load("app/data/model_epoch_500.pkl")
 node_mappings = pd.read_pickle("app/data/HYCDZM_node_id.pkl")
 
 # Load the mappings of C_ID with chemical name
-chemical_mappings = pd.read_csv("app\data\ALL_KG_ALL_CHEMICALS.csv")
+chemical_mappings = pd.read_csv("app/data/ALL_KG_ALL_CHEMICALS.csv")
 
 # Convert chemical mapping to a dictionary for fast lookups
 chemical_mapping_dict = dict(zip(chemical_mappings['MY_UNIQ_ID'], chemical_mappings['Chemicals']))
