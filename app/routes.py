@@ -31,14 +31,14 @@ async def get_subgraph(
     MATCH (n {{{property_name}: $property_value}})-[r]-(connected)
     WITH n, r, connected
     RETURN 
-        apoc.map.removeKeys(properties(n), {str(ignore_properties_source)}) AS node_properties,
+        apoc.map.removeKeys(properties(n), $ignore_properties_source) AS node_properties,
         collect(apoc.map.fromPairs([
             ['relationship_type', type(r)],
-            ['connected_properties', apoc.map.removeKeys(properties(connected), {str(ignore_properties_target)})]
+            ['connected_properties', apoc.map.removeKeys(properties(connected), $ignore_properties_target)]
         ]))[0..10] AS connections
     """
     
-    result = db.query(query, parameters={"property_value": property_value})
+    result = db.query(query, parameters={"property_value": property_value, "ignore_properties_source": ignore_properties_source, "ignore_properties_target": ignore_properties_target})
     
     if not result:
         raise HTTPException(status_code=404, detail="Node not found or no connections available")
@@ -63,109 +63,9 @@ async def get_subgraph(
     )
 
 @router.get(
-    "/get_entity",
-    response_model=EntityResponse,
-    description="Retrieve an entity node from the Evo-KG based on type, property, and value",
-    summary="Fetch an entity node based on search criteria",
-    response_description="Returns the entity node with specified properties",
-    operation_id="get_entity"
-)
-async def get_entity(
-    entity_type: str = Query(..., description="The type of entity (e.g., Gene, Protein, Disease)"),
-    property_type: str = Query(..., description="The property to search for (e.g., id, name)"),
-    property_value: str = Query(..., description="The value of the property to search for"),
-    db: Neo4jConnection = Depends(get_neo4j_connection)
-):
-    # Query to find the entity by the specified property
-    query = f"""
-    MATCH (e:{entity_type})
-    WHERE LOWER(e.{property_type}) = LOWER($property_value)
-    RETURN e;
-    """
-    
-    result = db.query(query, parameters={"property_value": property_value})
-    
-    if not result:
-        raise HTTPException(status_code=404, detail=f"{entity_type} with {property_type}='{property_value}' not found")
-    
-    # Return all properties of the node dynamically
-    entity_properties = result[0]["e"]
-    
-    return EntityResponse(entity=NodeProperties(attributes=entity_properties))
-
-@router.get(
-    "/get_similar_entities",
-    response_model=EntityResponse,
-    description="Retrieve a list of entities similar to the given property value using Sørensen–Dice similarity",
-    summary="Fetch similar entities based on Sørensen–Dice similarity",
-    response_description="Returns a list of similar entities (IDs or names)",
-    operation_id="get_similar_entities"
-)
-async def get_similar_entities(
-    entity_type: str = Query(..., description="The type of entity (e.g., Gene, Protein, Disease)"),
-    property_type: str = Query(..., description="The property to compare for similarity (e.g., name, description)"),
-    property_value: str = Query(..., description="The value to compare for similarity"),
-    similarity_threshold: float = Query(0.8, description="The Sørensen–Dice similarity threshold (default is 0.8)"),
-    db: Neo4jConnection = Depends(get_neo4j_connection)
-):
-    """
-    Retrieve a list of entities with a property value similar to the specified value,
-    using the Sørensen–Dice similarity threshold to filter results.
-    """
-    # Query to find similar entities
-    query = f"""
-    MATCH (e:{entity_type})
-    WHERE apoc.text.sorensenDiceSimilarity(LOWER(e.{property_type}), LOWER($property_value)) >= $similarity_threshold
-    RETURN e.{property_type} AS entity_property
-    LIMIT 10;
-    """
-    
-    result = db.query(query, parameters={"property_value": property_value, "similarity_threshold": similarity_threshold})
-    
-    if not result:
-        raise HTTPException(
-            status_code=404,
-            detail=f"No similar entities found for {entity_type} with {property_type}='{property_value}'"
-        )
-    
-    similar_entities = []
-    for record in result:
-        entity_property = record["entity_property"]
-        if property_type == "name":
-            similar_entities.append({"name": entity_property})
-        elif property_type == "id":
-            similar_entities.append({"id": entity_property})
-    
-    return EntityResponse(entity = [SimilarEntity(**entity) for entity in similar_entities],
-                          message = f"Similar entities found for {entity_type} with '{property_type}' = '{property_value}'")
-
-# Wrapper endpoint to handle both exact match and similarity fallback
-@router.get(
-    "/find_entity",
-    response_model=EntityResponse,
-    description="Retrieve an entity node from the Evo-KG based on type, property, and value, either by exact match or similar entities if not found",
-    summary="Fetch an entity node or similar ones based on the search criteria",
-    response_description="Returns the entity node with specified properties or a list of similar entities",
-    operation_id="find_entity"
-)
-async def find_entity(
-    entity_type: str = Query(..., description="The type of entity (e.g., Gene, Protein, Disease)"),
-    property_type: str = Query(..., description="The property to search for (e.g., id, name)"),
-    property_value: str = Query(..., description="The value of the property to search for"),
-    similarity_threshold: float = Query(0.8, description="The Sørensen–Dice similarity threshold (default is 0.8)"),
-    db: Neo4jConnection = Depends(get_neo4j_connection)
-):
-    # First try to find the exact entity
-    try:
-        return await get_entity(entity_type, property_type, property_value, db)
-    except HTTPException:
-        # If exact match fails, try to find similar entities
-        return await get_similar_entities(entity_type, property_type, property_value, similarity_threshold, db)
-
-@router.get(
     "/search_biological_entities",
     response_model=List[Dict[str, Any]],
-    description="Search biological entities such as Disease, Phenotype, AA_Intervention (Anti-aging intervention), Epigenetic_Modification (name: hypermethylation or hypomethylation), Aging_Phenotype (name: Anti-Aging or Pro-Aging or Aging), Hallmark, Metabolite or Tissue by name",
+    description="Search biological entities such as Gene, Protein, Chemical, Disease, Phenotype, AA_Intervention (Anti-aging intervention), Epigenetic_Modification (name: hypermethylation or hypomethylation), Aging_Phenotype (name: Anti-Aging or Pro-Aging or Aging), Hallmark, Metabolite or Tissue by name",
     summary="Search for biological entities by name",
     response_description="Returns a list of entity types with their top 3 matching entities",
     operation_id="search_biological_entities"
@@ -175,20 +75,26 @@ async def search_biological_entities(
     db: Neo4jConnection = Depends(get_neo4j_connection)
 ):
     """
-    Search for biological entities such as Disease, Phenotype, AA_Intervention (Anti-aging intervention), Epigenetic_Modification (name: hypermethylation or hypomethylation), Aging_Phenotype (name: Anti-Aging or Pro-Aging or Aging), Hallmark, Metabolite or Tissue by name.
+    Search for biological entities such as Gene, Protein, Chemical, Disease, Phenotype, AA_Intervention (Anti-aging intervention), Epigenetic_Modification (name: hypermethylation or hypomethylation), Aging_Phenotype (name: Anti-Aging or Pro-Aging or Aging), Hallmark, Metabolite or Tissue by name.
     """
+
+    # List of properties to exclude for optimization
+    ignore_properties = ['sequence', 'seq', 'type']
+
     query = """
     WITH $targetTerm AS targetTerm
     MATCH (e)
-    WHERE (e:Disease OR e:Phenotype OR e:AA_Intervention OR e:Tissue OR e:Aging_Phenotype OR e:Epigenetic_Modification OR e:Hallmark OR e:Metabolite) AND toLower(e.name) CONTAINS toLower(targetTerm)
+    WHERE (e:Gene OR e:Protein OR e:Chemical OR e:Disease OR e:Phenotype OR e:AA_Intervention OR e:Tissue OR e:Aging_Phenotype OR e:Epigenetic_Modification OR e:Hallmark OR e:Metabolite) 
+    AND (toLower(e.name) CONTAINS toLower(targetTerm) OR toLower(e.id) CONTAINS toLower(targetTerm))
     WITH e, labels(e) AS entityTypes
     ORDER BY entityTypes[0] ASC, size(e.name) ASC
-    WITH entityTypes[0] AS entityType, COLLECT({name: e.name, species: e.species}) AS entities
-    WITH entityType, entities[0..5] AS topEntities
+    WITH entityTypes[0] AS entityType, 
+        COLLECT(apoc.map.removeKeys(properties(e), $ignore_properties)) AS entities
+    WITH entityType, entities[0..3] AS topEntities
     RETURN entityType, topEntities;
     """
     
-    result = db.query(query, parameters={"targetTerm": targetTerm})
+    result = db.query(query, parameters={"targetTerm": targetTerm, "ignore_properties": ignore_properties})
     
     if not result:
         raise HTTPException(
@@ -236,17 +142,17 @@ async def get_entity_relationships(
         MATCH (e:{entity_type})-[r]-(related)
         WHERE e.{property_name} = $property_value AND LOWER(type(r)) = LOWER($relationship_type)
         RETURN count(related) AS total_count,
-               collect(apoc.map.removeKeys(properties(related), {str(ignore_properties)}))[0..20] AS entity_properties
+               collect(apoc.map.removeKeys(properties(related), $ignore_properties))[0..20] AS entity_properties
         """
-        params = {"property_value": property_value, "relationship_type": relationship_type}
+        params = {"property_value": property_value, "relationship_type": relationship_type, "ignore_properties": ignore_properties}
     else:
         query = f"""
         MATCH (e:{entity_type})--(related)
         WHERE e.{property_name} = $property_value
         RETURN count(related) AS total_count,
-               collect(apoc.map.removeKeys(properties(related), {str(ignore_properties)}))[0..20] AS entity_properties
+               collect(apoc.map.removeKeys(properties(related), $ignore_properties))[0..20] AS entity_properties
         """
-        params = {"property_value": property_value}
+        params = {"property_value": property_value, "ignore_properties": ignore_properties}
 
     # Execute the query
     result = db.query(query, parameters=params)
