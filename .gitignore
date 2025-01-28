@@ -141,3 +141,8 @@ cython_debug/
 .DS_Store
 TODO
 .vercel
+
+
+#data files
+.pkl
+.csv
