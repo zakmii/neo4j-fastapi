@@ -51,8 +51,8 @@ edge_mapping = {'drug_drug' : 0,
                 'hallmark_phenotype': 30
                 }
 
-def get_NodeID(node: str) -> int:
-    return node_mappings[node_mappings['Node'] == node]['MappedID'].values[0].item()
+# def get_NodeID(node: str) -> int:
+#     return node_mappings[node_mappings['Node'] == node]['MappedID'].values[0].item()
 
 def get_NodeName(node_id: int) -> str:
     return node_mappings[node_mappings['MappedID'] == node_id]['Node'].values[0].item()
@@ -69,7 +69,7 @@ def get_EdgeID(edge: str) -> int:
     operation_id="predict_tail"
 )
 async def predict_tail(
-    head: str = Query(..., description="Head entity for the prediction"),
+    head: str = Query(..., description="model_id for the head entity for the prediction"),
     relation: str = Query(..., description="Relation for the prediction"),
     top_k_predictions: int = Query(10, description="Number of top predictions to return (default is 10)")
 ):
@@ -77,7 +77,7 @@ async def predict_tail(
     Predict the top K tail entities given a head entity and relation.
     """
     try:
-        head_id = get_NodeID(head)
+        head_id = int(head)
         relation_id = get_EdgeID(relation)
 
         # Perform prediction
@@ -117,18 +117,18 @@ async def predict_tail(
     response_model=PredictionRankResponse
 )
 async def get_prediction_rank(
-    head: str = Query(..., description="Head entity for the prediction"),
+    head: str = Query(..., description="model_id for head entity for the prediction"),
     relation: str = Query(..., description="Relation for the prediction"),
-    tail: str = Query(..., description="Tail entity to check for its rank")
+    tail: str = Query(..., description="model_id for tail entity to check for its rank")
 ):
     """
     Returns the rank, score of the given tail entity, and the maximum score among predictions.
     """
     try:
         # Get IDs for head, relation, and tail
-        head_id = get_NodeID(head)
+        head_id = int(head)
         relation_id = get_EdgeID(relation)
-        tail_id = get_NodeID(tail)
+        tail_id = int(tail)
 
         # Perform prediction for all tail entities
         prediction_df = predict.predict_target(
