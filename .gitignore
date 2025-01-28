@@ -144,5 +144,5 @@ TODO
 
 
 #data files
-.pkl
-.csv
+*.pkl
+*.csv
