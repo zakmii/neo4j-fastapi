@@ -1,9 +1,46 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from .utils.database import get_neo4j_connection, Neo4jConnection
-from .utils.schema import NodeProperties,SimilarEntity,EntityResponse, SubgraphResponse, NodeConnection, RelatedEntity, EntityRelationshipsResponse, RelationCheckResponse
+from .utils.schema import NodeProperties,TripleResponse, SubgraphResponse, NodeConnection, RelatedEntity, EntityRelationshipsResponse, RelationCheckResponse
 from typing import Optional, List, Dict, Any
 
 router = APIRouter()
+
+@router.get(
+    "/sample_triples",
+    response_model=List[TripleResponse],
+    description="Retrieve sample triples based on the relationship type",
+    summary="Fetch sample triples",
+    response_description="Returns a list of triples with head, relation, and tail",
+    operation_id="get_sample_triples"
+)
+async def get_sample_triples(
+    rel_type: str = Query(..., description="The relationship type to filter triples. (e.g. GENE_GENE, GENE_DISEASE, GENE_PHENOTYPE)"),
+    db: Neo4jConnection = Depends(get_neo4j_connection)
+):
+    """
+    Fetch up to 10 sample triples for a given relationship type.
+    """
+    query = """
+    WITH toLower($relType) AS relationshipType
+    CALL apoc.cypher.run(
+        "MATCH (h)-[r]->(t) 
+         WHERE toLower(type(r)) = $relationshipType 
+         RETURN 
+             COALESCE(h.id, h.name, id(h)) AS Head, 
+             type(r) AS Relation, 
+             COALESCE(t.id, t.name, id(t)) AS Tail 
+         LIMIT 10",
+        {relationshipType: relationshipType}
+    ) YIELD value
+    RETURN value.Head AS Head, value.Relation AS Relation, value.Tail AS Tail;
+    """
+    
+    result = db.query(query, parameters={"relType": rel_type})
+    
+    if not result:
+        raise HTTPException(status_code=404, detail=f"No triples found for relationship type '{rel_type}'")
+    
+    return [TripleResponse(head=record["Head"], relation=record["Relation"], tail=record["Tail"]) for record in result]
 
 @router.get(
     "/get_nodes_by_label",
