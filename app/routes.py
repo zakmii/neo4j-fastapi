@@ -6,6 +6,35 @@ from typing import Optional, List, Dict, Any
 router = APIRouter()
 
 @router.get(
+    "/get_nodes_by_label",
+    response_model=List[dict],
+    description="Retrieve 10 nodes of a given type, returning either id or name as available.",
+    summary="Fetch nodes by label",
+    response_description="Returns a list of up to 10 nodes with their primary identifiers",
+    operation_id="get_nodes_by_label"
+)
+async def get_nodes_by_label(
+    label: str = Query(..., description="The label of the nodes to retrieve (e.g., Gene, Protein, Disease, Chemical, Phenotype, AA_Intervention, Epigenetic_Modification, Aging_Phenotype, Hallmark, Metabolite, Tissue)"),
+    db: Neo4jConnection = Depends(get_neo4j_connection)
+):
+    query = f"""
+    MATCH (n:{label})
+    WITH n, 
+      CASE 
+        WHEN n.id IS NOT NULL THEN {{property: 'id', value: n.id}} 
+        ELSE {{property: 'name', value: n.name}} 
+      END AS identifier
+    RETURN identifier.value AS identifier
+    LIMIT 10
+    """
+
+    result = db.query(query)
+    if not result:
+        raise HTTPException(status_code=404, detail=f"No nodes found for label '{label}'")
+
+    return result
+
+@router.get(
     "/subgraph",
     description="Retrieve a subgraph of related nodes by specifying the property and value of the start node",
     summary="Get a subgraph of connected nodes based on start node properties",
