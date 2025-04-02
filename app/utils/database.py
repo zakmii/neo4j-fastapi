@@ -10,7 +10,8 @@ class Neo4jConnection:
         self.password = password
         self.driver = GraphDatabase.driver(self.uri, auth=(self.user, self.password))
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def close(self):
+        """Close the Neo4j connection."""
         if self.driver:
             self.driver.close()
 
@@ -19,9 +20,13 @@ class Neo4jConnection:
             result = session.run(query, parameters)
             return [record for record in result]
 
+# Global instance (Singleton) for the Neo4j connection
+neo4j_connection = Neo4jConnection(
+    uri=Config.NEO4J_URI,
+    user=Config.NEO4J_USERNAME,
+    password=Config.NEO4J_PASSWORD,
+)
+
 # Dependency injection function for FastAPI routes
 def get_neo4j_connection():
-    uri = Config.NEO4J_URI
-    user = Config.NEO4J_USERNAME
-    password = Config.NEO4J_PASSWORD
-    return Neo4jConnection(uri, user, password)
+    return neo4j_connection
