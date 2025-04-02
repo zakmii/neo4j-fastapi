@@ -7,13 +7,28 @@ import pandas as pd
 router = APIRouter()
 
 # Load a pre-trained PyKEEN model
-kge_model = torch.load("app/data/model_epoch_500.pkl")
+try:
+    kge_model = torch.load("app/data/model_epoch_500.pkl")
+except FileNotFoundError:
+    raise Exception("KGE model file not found. Please ensure model_epoch_500.pkl exists in the app/data directory.")
+except Exception as e:
+    raise Exception(f"Error loading KGE model: {str(e)}")
 
 # Load the mappings for the entities and relations
-node_mappings = pd.read_pickle("app/data/HYCDZM_node_id.pkl")
+try:
+    node_mappings = pd.read_pickle("app/data/HYCDZM_node_id.pkl")
+except FileNotFoundError:
+    raise Exception("Node mappings file not found. Please ensure HYCDZM_node_id.pkl exists in the app/data directory.")
+except Exception as e:
+    raise Exception(f"Error loading node mappings: {str(e)}")
 
 # Load the mappings of C_ID with chemical name
-chemical_mappings = pd.read_csv("app/data/ALL_KG_ALL_CHEMICALS_05_02.csv")
+try:
+    chemical_mappings = pd.read_csv("app/data/ALL_KG_ALL_CHEMICALS_05_02.csv")
+except FileNotFoundError:
+    raise Exception("Chemical mappings file not found. Please ensure ALL_KG_ALL_CHEMICALS_05_02.csv exists in the app/data directory.")
+except Exception as e:
+    raise Exception(f"Error loading chemical mappings: {str(e)}")
 
 # Convert chemical mapping to a dictionary for fast lookups
 chemical_mapping_dict = dict(zip(chemical_mappings['MY_UNIQ_ID'], chemical_mappings['Chemicals']))
