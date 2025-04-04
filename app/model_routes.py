@@ -6,11 +6,11 @@ import pandas as pd
 
 router = APIRouter()
 
-# Load a pre-trained PyKEEN model
-kge_model = torch.load("app/data/model_epoch_500.pkl")
+# # Load a pre-trained PyKEEN model
+# kge_model = torch.load("app/data/model_epoch_500.pkl")
 
-# Load the mappings for the entities and relations
-node_mappings = pd.read_pickle("app/data/HYCDZM_node_id.pkl")
+# # Load the mappings for the entities and relations
+# node_mappings = pd.read_pickle("app/data/HYCDZM_node_id.pkl")
 
 edge_mapping = {'drug_drug' : 0,
                 'drug_gene' : 1,
