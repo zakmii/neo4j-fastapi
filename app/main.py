@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app import routes, model_routes
+from app import demo_routes
 
 app = FastAPI(
     title="Evo-KG API",
@@ -8,7 +9,16 @@ app = FastAPI(
 )
 
 app.include_router(routes.router)
-app.include_router(model_routes.router)
+
+try:
+    app.include_router(model_routes.router)
+    print("Model routes included successfully")
+except Exception as e:
+    print(f"Error including model routes: {e}")
+
+# Include demo routes for testing
+# Completely for testing purposes
+app.include_router(demo_routes.router)
 
 # Allow CORS
 app.add_middleware(
