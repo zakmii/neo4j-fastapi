@@ -3,7 +3,7 @@ import os
 from dotenv import load_dotenv, find_dotenv
 
 # Load environment from disk first, then apply any defaults
-load_dotenv(find_dotenv('.env.example'))
+load_dotenv(find_dotenv('.env'))
 
 class Config:
     # Neo4j driver execution
