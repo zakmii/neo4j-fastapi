@@ -6,13 +6,19 @@ import pandas as pd
 
 router = APIRouter()
 
-# Load a pre-trained PyKEEN model
+# Define the path to the model file
+model_path = "app/data/model_epoch_99.pkl"
+
+# Attempt to load the pre-trained PyKEEN model
 try:
-    kge_model = torch.load("app/data/model_epoch_99.pkl")
+    # Load the model onto the appropriate device
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    kge_model = torch.load(model_path, map_location=device)
+
 except FileNotFoundError:
-    raise Exception("KGE model file not found. Please ensure model_epoch_500.pkl exists in the app/data directory.")
+    raise FileNotFoundError(f"KGE model file not found. Please ensure '{model_path}' exists.")
 except Exception as e:
-    raise Exception(f"Error loading KGE model: {str(e)}")
+    raise RuntimeError(f"Error loading KGE model: {str(e)}")
 
 # Load the mappings for the entities and relations
 try:
