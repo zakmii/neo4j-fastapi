@@ -13,7 +13,7 @@ model_path = "app/data/model_epoch_99.pkl"
 try:
     # Load the model onto the appropriate device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    kge_model = torch.load(model_path, map_location=device)
+    kge_model = torch.load(model_path, map_location=device, weights_only=False)
 
 except FileNotFoundError:
     raise FileNotFoundError(f"KGE model file not found. Please ensure '{model_path}' exists.")
