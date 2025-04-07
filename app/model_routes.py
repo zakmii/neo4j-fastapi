@@ -8,7 +8,7 @@ router = APIRouter()
 
 # Load a pre-trained PyKEEN model
 try:
-    kge_model = torch.load("app/data/model_epoch_500.pkl")
+    kge_model = torch.load("app/data/model_epoch_99.pkl")
 except FileNotFoundError:
     raise Exception("KGE model file not found. Please ensure model_epoch_500.pkl exists in the app/data directory.")
 except Exception as e:
@@ -16,7 +16,7 @@ except Exception as e:
 
 # Load the mappings for the entities and relations
 try:
-    node_mappings = pd.read_pickle("app/data/HYCDZM_node_id.pkl")
+    node_mappings = pd.read_pickle("app/data/node_id_H_KG.pkl")
 except FileNotFoundError:
     raise Exception("Node mappings file not found. Please ensure HYCDZM_node_id.pkl exists in the app/data directory.")
 except Exception as e:
