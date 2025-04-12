@@ -1,6 +1,7 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Query
+from fastapi import APIRouter
 
 router = APIRouter()
+
 
 @router.get(
     "/hello_world",
@@ -8,7 +9,7 @@ router = APIRouter()
     description="A simple test endpoint that returns 'Hello, World!'",
     summary="Hello World Test Endpoint",
     response_description="Returns a simple greeting message",
-    operation_id="hello_world"
+    operation_id="hello_world",
 )
 async def hello_world():
     return {"message": "Hello, World!"}

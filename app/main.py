@@ -5,7 +5,7 @@ from app import demo_routes
 
 app = FastAPI(
     title="Evo-KG API",
-    description="API for interacting with the Evo-KG knowledge graph using Neo4j"
+    description="API for interacting with the Evo-KG knowledge graph using Neo4j",
 )
 
 app.include_router(routes.router)
@@ -29,6 +29,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/")
 async def read_root():
-    return {"message": "Welcome to the Evo-KG API. Visit /docs for the API documentation."}
+    return {
+        "message": "Welcome to the Evo-KG API. Visit /docs for the API documentation."
+    }
