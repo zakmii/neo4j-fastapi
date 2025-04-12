@@ -81,11 +81,17 @@ chemical_mapping_dict = dict(
 #                 }
 edge_mapping = {
     "gene_anatomy": 0,
+    "anatomy_gene": 0,
     "gene_biologicalprocess": 1,
+    "biologicalprocess_gene": 1,
     "gene_chemicalentity": 2,
+    "chemicalentity_gene": 2,
     "gene_disease": 3,
+    "disease_gene": 3,
     "gene_pathway": 4,
+    "pathway_gene": 4,
     "disease_anatomy": 5,
+    "anatomy_disease": 5,
 }
 
 # def get_NodeID(node: str) -> int:
