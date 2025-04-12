@@ -7,3 +7,4 @@ openai
 pykeen
 pandas
 torch
+pre-commit
