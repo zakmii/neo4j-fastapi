@@ -1,7 +1,8 @@
 # app/database.py
 
 from neo4j import GraphDatabase
-from .environment import Config
+
+from app.utils.environment import CONFIG
 
 
 class Neo4jConnection:
@@ -24,9 +25,9 @@ class Neo4jConnection:
 
 # Global instance (Singleton) for the Neo4j connection
 neo4j_connection = Neo4jConnection(
-    uri=Config.NEO4J_URI,
-    user=Config.NEO4J_USERNAME,
-    password=Config.NEO4J_PASSWORD,
+    uri=CONFIG.NEO4J.URI,
+    user=CONFIG.NEO4J.USERNAME,
+    password=CONFIG.NEO4J.PASSWORD,
 )
 
 

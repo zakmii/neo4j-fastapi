@@ -1,13 +1,19 @@
-from fastapi import APIRouter, HTTPException, Query
-from .utils.schema import PredictionResponse, PredictionResult, PredictionRankResponse
-from pykeen import predict
-import torch
 import pandas as pd
+import torch
+from fastapi import APIRouter, HTTPException, Query
+from pykeen import predict
+
+from app.utils.schema import (
+    PredictionRankResponse,
+    PredictionResponse,
+    PredictionResult,
+)
 
 router = APIRouter()
 
-# Define the path to the model file
+# Define the path for data loading
 model_path = "app/data/model_epoch_99.pkl"
+node_mappings_path = "app/data/node_id_H_KG.pkl"
 
 # Attempt to load the pre-trained PyKEEN model
 try:
@@ -17,34 +23,34 @@ try:
 
 except FileNotFoundError:
     raise FileNotFoundError(
-        f"KGE model file not found. Please ensure '{model_path}' exists."
+        f"KGE model file not found. Please ensure '{model_path}' exists.",
     )
 except Exception as e:
-    raise RuntimeError(f"Error loading KGE model: {str(e)}")
+    raise RuntimeError(f"Error loading KGE model: {e!s}")
 
 # Load the mappings for the entities and relations
 try:
-    node_mappings = pd.read_pickle("app/data/node_id_H_KG.pkl")
+    node_mappings = pd.read_pickle(node_mappings_path)
 except FileNotFoundError:
     raise Exception(
-        "Node mappings file not found. Please ensure HYCDZM_node_id.pkl exists in the app/data directory."
+        f"Node mappings file not found. Please ensure {node_mappings_path} exists in the app/data directory.",
     )
 except Exception as e:
-    raise Exception(f"Error loading node mappings: {str(e)}")
+    raise Exception(f"Error loading node mappings: {e!s}")
 
 # Load the mappings of C_ID with chemical name
 try:
     chemical_mappings = pd.read_csv("app/data/ALL_KG_ALL_CHEMICALS_05_02.csv")
 except FileNotFoundError:
     raise Exception(
-        "Chemical mappings file not found. Please ensure ALL_KG_ALL_CHEMICALS_05_02.csv exists in the app/data directory."
+        "Chemical mappings file not found. Please ensure ALL_KG_ALL_CHEMICALS_05_02.csv exists in the app/data directory.",
     )
 except Exception as e:
-    raise Exception(f"Error loading chemical mappings: {str(e)}")
+    raise Exception(f"Error loading chemical mappings: {e!s}")
 
 # Convert chemical mapping to a dictionary for fast lookups
 chemical_mapping_dict = dict(
-    zip(chemical_mappings["MY_UNIQ_ID"], chemical_mappings["Chemicals"])
+    zip(chemical_mappings["MY_UNIQ_ID"], chemical_mappings["Chemicals"]),
 )
 
 # edge_mapping = {'drug_drug' : 0,
@@ -116,16 +122,16 @@ def get_EdgeID(edge: str) -> int:
 )
 async def predict_tail(
     head: str = Query(
-        ..., description="model_id for the head entity for the prediction"
+        ...,
+        description="model_id for the head entity for the prediction",
     ),
     relation: str = Query(..., description="Relation for the prediction"),
     top_k_predictions: int = Query(
-        10, description="Number of top predictions to return (default is 10)"
+        10,
+        description="Number of top predictions to return (default is 10)",
     ),
 ):
-    """
-    Predict the top K tail entities given a head entity and relation.
-    """
+    """Predict the top K tail entities given a head entity and relation."""
     try:
         head_id = int(head)
         relation_id = get_EdgeID(relation)
@@ -142,7 +148,7 @@ async def predict_tail(
 
         # Replace tail names with corresponding Chemicals names using mapping
         df["Node"] = df["Node"].apply(
-            lambda node: chemical_mapping_dict.get(node, node)
+            lambda node: chemical_mapping_dict.get(node, node),
         )
 
         # Format the result for the response
@@ -152,10 +158,12 @@ async def predict_tail(
         ]
 
         return PredictionResponse(
-            head_entity=head, relation=relation, predictions=predictions
+            head_entity=head,
+            relation=relation,
+            predictions=predictions,
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Prediction failed: {e!s}")
 
 
 @router.get(
@@ -171,12 +179,11 @@ async def get_prediction_rank(
     head: str = Query(..., description="model_id for head entity for the prediction"),
     relation: str = Query(..., description="Relation for the prediction"),
     tail: str = Query(
-        ..., description="model_id for tail entity to check for its rank"
+        ...,
+        description="model_id for tail entity to check for its rank",
     ),
 ):
-    """
-    Returns the rank, score of the given tail entity, and the maximum score among predictions.
-    """
+    """Returns the rank, score of the given tail entity, and the maximum score among predictions."""
     try:
         # Get IDs for head, relation, and tail
         head_id = int(head)
@@ -185,17 +192,23 @@ async def get_prediction_rank(
 
         # Perform prediction for all tail entities
         prediction_df = predict.predict_target(
-            model=kge_model, head=head_id, relation=relation_id
+            model=kge_model,
+            head=head_id,
+            relation=relation_id,
         ).df
 
         # Merge the node names into the DataFrame
         prediction_df = prediction_df.merge(
-            node_mappings, left_on="tail_id", right_on="MappedID", how="left"
+            node_mappings,
+            left_on="tail_id",
+            right_on="MappedID",
+            how="left",
         )
 
         # Find the rank, score of the given tail, and max score
         prediction_df["rank"] = prediction_df["score"].rank(
-            ascending=False, method="dense"
+            ascending=False,
+            method="dense",
         )
         tail_row = prediction_df[prediction_df["tail_id"] == tail_id]
 
@@ -220,5 +233,6 @@ async def get_prediction_rank(
         )
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Prediction rank calculation failed: {str(e)}"
+            status_code=500,
+            detail=f"Prediction rank calculation failed: {e!s}",
         )

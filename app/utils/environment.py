@@ -1,13 +1,31 @@
 # Packages and functions for loading environment variables
-import os
-from dotenv import load_dotenv, find_dotenv
+from dotenv import find_dotenv, load_dotenv
+from pydantic_settings import BaseSettings
 
 # Load environment from disk first, then apply any defaults
 load_dotenv(find_dotenv(".env"))
 
 
-class Config:
-    # Neo4j driver execution
-    NEO4J_URI = os.environ.get("NEO4J_URI", "")
-    NEO4J_USERNAME = os.environ.get("NEO4J_USERNAME", "neo4j")
-    NEO4J_PASSWORD = os.environ.get("NEO4J_PASSWORD", "")
+class UvicornConfig(BaseSettings):
+    PORT: int = 1026
+    HOST: str = "0.0.0.0"
+
+    WORKERS: int = 4
+    RELOAD_ON_CHANGE: bool = False
+
+    class Config:
+        env_prefix = "UVICORN_"
+
+
+class Neo4jConfig(BaseSettings):
+    URI: str = "bolt://localhost:7687"
+    USERNAME: str
+    PASSWORD: str
+
+    class Config:
+        env_prefix = "NEO4J_"
+
+
+class CONFIG:
+    NEO4J = Neo4jConfig()
+    UVICORN = UvicornConfig()

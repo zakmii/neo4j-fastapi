@@ -58,8 +58,8 @@ indent-width = 4
 [tool.ruff.lint]
 # Add specific rules if needed, e.g., select = ["E", "F", "W", "I"]
 # See Ruff documentation for available rules.
-select = ["ALL"] # Start with all rules and ignore specific ones below if necessary
-ignore = ["E501"] # Example: ignore line length errors if handled by formatter
+select = ["E", "F", "W", "I"] # Select common rule sets
+ignore = ["E501","D100", "D203", "D212"] # Example: ignore line length errors if handled by formatter
 
 [tool.ruff.format]
 # Like Black, use double quotes for strings.

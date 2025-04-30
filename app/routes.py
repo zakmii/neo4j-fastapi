@@ -1,15 +1,17 @@
+from typing import Any, Dict, List, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query
-from .utils.database import get_neo4j_connection, Neo4jConnection
-from .utils.schema import (
-    NodeProperties,
-    TripleResponse,
-    SubgraphResponse,
-    NodeConnection,
-    RelatedEntity,
+
+from app.utils.database import Neo4jConnection, get_neo4j_connection
+from app.utils.schema import (
     EntityRelationshipsResponse,
+    NodeConnection,
+    NodeProperties,
+    RelatedEntity,
     RelationCheckResponse,
+    SubgraphResponse,
+    TripleResponse,
 )
-from typing import Optional, List, Dict, Any
 
 router = APIRouter()
 
@@ -29,9 +31,7 @@ async def get_sample_triples(
     ),
     db: Neo4jConnection = Depends(get_neo4j_connection),
 ):
-    """
-    Fetch up to 10 sample triples for a given relationship type.
-    """
+    """Fetch up to 10 sample triples for a given relationship type."""
     query = """
     WITH toLower($relType) AS relationshipType
     CALL apoc.cypher.run(
@@ -57,7 +57,9 @@ async def get_sample_triples(
 
     return [
         TripleResponse(
-            head=record["Head"], relation=record["Relation"], tail=record["Tail"]
+            head=record["Head"],
+            relation=record["Relation"],
+            tail=record["Tail"],
         )
         for record in result
     ]
@@ -92,7 +94,8 @@ async def get_nodes_by_label(
     result = db.query(query)
     if not result:
         raise HTTPException(
-            status_code=404, detail=f"No nodes found for label '{label}'"
+            status_code=404,
+            detail=f"No nodes found for label '{label}'",
         )
 
     return result
@@ -108,15 +111,13 @@ async def get_nodes_by_label(
 )
 async def get_subgraph(
     property_name: str = Query(
-        ..., description="Property name of the start node to search for"
+        ...,
+        description="Property name of the start node to search for",
     ),
     property_value: str = Query(..., description="Value of the property to search for"),
     db: Neo4jConnection = Depends(get_neo4j_connection),
 ):
-    """
-    Retrieve a subgraph of related nodes while limiting the connections to 10.
-    """
-
+    """Retrieve a subgraph of related nodes while limiting the connections to 10."""
     # This is done to optimize the query by removing unnecessary properties
     # Makes the query faster and reduces the data transfer
     ignore_properties_source = ["sequence", "seq", "smiles", "detail", "details"]
@@ -151,7 +152,8 @@ async def get_subgraph(
 
     if not result:
         raise HTTPException(
-            status_code=404, detail="Node not found or no connections available"
+            status_code=404,
+            detail="Node not found or no connections available",
         )
 
     # Extract the source node and connections from the query result
@@ -165,11 +167,11 @@ async def get_subgraph(
                 NodeConnection(
                     relationship_type=connection["relationship_type"],
                     target_node=NodeProperties(
-                        attributes=connection["connected_properties"]
+                        attributes=connection["connected_properties"],
                     ),
                 )
                 for connection in record["connections"]
-            ]
+            ],
         )
 
     return SubgraphResponse(source_node=source_node, connections=connections)
@@ -190,10 +192,7 @@ async def search_biological_entities(
     ),
     db: Neo4jConnection = Depends(get_neo4j_connection),
 ):
-    """
-    Search biological entities such as Gene, Protein, Disease, Chemical, Phenotype, Tissue, Anatomy, BiologicalProcess, MolecularFunction, CellularComponent, Pathway or Mutation by name or id
-    """
-
+    """Search biological entities such as Gene, Protein, Disease, Chemical, Phenotype, Tissue, Anatomy, BiologicalProcess, MolecularFunction, CellularComponent, Pathway or Mutation by name or id"""
     # List of properties to exclude for optimization
     ignore_properties = ["sequence", "seq", "type"]
 
@@ -238,22 +237,24 @@ async def search_biological_entities(
 )
 async def get_entity_relationships(
     entity_type: str = Query(
-        ..., description="The type of entity to search for (e.g., Gene, Protein)"
+        ...,
+        description="The type of entity to search for (e.g., Gene, Protein)",
     ),
     property_name: str = Query(
-        ..., description="The property used to identify the entity (e.g., id, name)"
+        ...,
+        description="The property used to identify the entity (e.g., id, name)",
     ),
     property_value: str = Query(
-        ..., description="The value of the property for the entity"
+        ...,
+        description="The value of the property for the entity",
     ),
     relationship_type: Optional[str] = Query(
-        None, description="The type of relationship to filter by (optional)"
+        None,
+        description="The type of relationship to filter by (optional)",
     ),
     db: Neo4jConnection = Depends(get_neo4j_connection),
 ):
-    """
-    Fetch related entities, optionally filter by relationship type, and limit details to 20 entities while providing the total count.
-    """
+    """Fetch related entities, optionally filter by relationship type, and limit details to 20 entities while providing the total count."""
     # List of properties to exclude for optimization
     ignore_properties = [
         "sequence",
@@ -310,7 +311,8 @@ async def get_entity_relationships(
     ]
 
     return EntityRelationshipsResponse(
-        total_relationships=total_count, related_entities=related_entities
+        total_relationships=total_count,
+        related_entities=related_entities,
     )
 
 
@@ -324,24 +326,28 @@ async def get_entity_relationships(
 )
 async def check_relationship(
     entity1_type: str = Query(
-        ..., description="The type of the first entity (e.g., Gene, Protein)"
+        ...,
+        description="The type of the first entity (e.g., Gene, Protein)",
     ),
     entity1_property_name: str = Query(
         ...,
         description="The property name to identify the first entity (e.g., id, name)",
     ),
     entity1_property_value: str = Query(
-        ..., description="The property value to identify the first entity"
+        ...,
+        description="The property value to identify the first entity",
     ),
     entity2_type: str = Query(
-        ..., description="The type of the second entity (e.g., Disease, Protein)"
+        ...,
+        description="The type of the second entity (e.g., Disease, Protein)",
     ),
     entity2_property_name: str = Query(
         ...,
         description="The property name to identify the second entity (e.g., id, name)",
     ),
     entity2_property_value: str = Query(
-        ..., description="The property value to identify the second entity"
+        ...,
+        description="The property value to identify the second entity",
     ),
     db: Neo4jConnection = Depends(get_neo4j_connection),
 ):
@@ -366,5 +372,6 @@ async def check_relationship(
 
     # If a relationship exists, return the type
     return RelationCheckResponse(
-        exists=True, relationship_type=result[0]["relationship_type"]
+        exists=True,
+        relationship_type=result[0]["relationship_type"],
     )
