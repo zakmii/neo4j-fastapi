@@ -1,7 +1,20 @@
-# Define minimum pre-commit version for compatibility
-minimum_pre_commit_version: "4.2.0"
-
 repos:
+  - repo: local
+    hooks:
+      - id: poetry-lock
+        name: Update poetry.lock
+        entry: poetry lock
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: update-requirements
+        name: Update requirements.txt from poetry.lock
+        entry: poetry export --without-hashes -f requirements.txt -o requirements.txt
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version.
     rev: v0.11.5
@@ -13,7 +26,7 @@ repos:
         args: [ --fix, --verbose ]
         types: [python]
         # Only run on tracked files to avoid checking large directories
-        stages: [commit]
+        stages: [pre-commit]
       # Run the formatter.
       - id: ruff-format
         name: "Ruff Formatter"
@@ -23,7 +36,7 @@ repos:
         # You can exclude specific directories
         exclude: ^(venv/|docs/)
         # Only run on tracked files to avoid checking large directories
-        stages: [commit]
+        stages: [pre-commit]
 
   # You can add other useful hooks too:
   - repo: https://github.com/pre-commit/pre-commit-hooks
