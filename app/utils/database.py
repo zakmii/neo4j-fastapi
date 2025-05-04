@@ -38,8 +38,8 @@ def get_neo4j_connection():
 
 
 # --- Redis Connection ---
-
-
+# This class manages the Redis connection pool and provides a method to get a connection.
+# It also includes a method to close the connection pool when needed.
 class RedisConnection:
     def __init__(
         self, host: str, port: int, db: int, username: str = None, password: str = None
