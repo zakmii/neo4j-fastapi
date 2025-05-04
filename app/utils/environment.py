@@ -1,4 +1,6 @@
 # Packages and functions for loading environment variables
+from typing import Optional
+
 from dotenv import find_dotenv, load_dotenv
 from pydantic_settings import BaseSettings
 
@@ -26,6 +28,29 @@ class Neo4jConfig(BaseSettings):
         env_prefix = "NEO4J_"
 
 
+class RedisConfig(BaseSettings):
+    HOST: str = "localhost"
+    PORT: int = 6379
+    DB: int = 0
+
+    USERNAME: Optional[str] = None
+    PASSWORD: Optional[str] = None
+
+    class Config:
+        env_prefix = "REDIS_"
+
+
+class JWTSettings(BaseSettings):
+    SECRET_KEY: str
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+
+    class Config:
+        env_prefix = "JWT_"
+
+
 class CONFIG:
     NEO4J = Neo4jConfig()
     UVICORN = UvicornConfig()
+    REDIS = RedisConfig()
+    JWT = JWTSettings()

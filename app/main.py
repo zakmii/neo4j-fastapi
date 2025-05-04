@@ -1,8 +1,10 @@
+import logging
+
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app import demo_routes, model_routes, routes
+from app import auth_routes, demo_routes, model_routes, routes
 from app.utils.environment import CONFIG
 
 app = FastAPI(
@@ -11,12 +13,16 @@ app = FastAPI(
 )
 
 app.include_router(routes.router)
+app.include_router(auth_routes.router)
+
+
+logger = logging.getLogger("uvicorn.error")
 
 try:
     app.include_router(model_routes.router)
-    print("Model routes included successfully")
+    logger.info("Model routes included successfully")
 except Exception as e:
-    print(f"Error including model routes: {e}")
+    logger.error(f"Error including model routes: {e}")
 
 # Include demo routes for testing
 # Completely for testing purposes
