@@ -1,4 +1,6 @@
 # Packages and functions for loading environment variables
+from typing import Optional
+
 from dotenv import find_dotenv, load_dotenv
 from pydantic_settings import BaseSettings
 
@@ -30,8 +32,9 @@ class RedisConfig(BaseSettings):
     HOST: str = "localhost"
     PORT: int = 6379
     DB: int = 0
-    USERNAME: str = None
-    PASSWORD: str = None
+
+    USERNAME: Optional[str] = None
+    PASSWORD: Optional[str] = None
 
     class Config:
         env_prefix = "REDIS_"

@@ -8,7 +8,7 @@ This project uses [Poetry](https://python-poetry.org/) for dependency management
 
 1.  **Clone the repository (if you haven't already):**
     ```bash
-    git clone <repository-url>
+    git clone https://github.com/your-username/neo4j-fastapi.git
     cd neo4j-fastapi
     ```
 
@@ -33,8 +33,8 @@ This project uses [Poetry](https://python-poetry.org/) for dependency management
 
     REDIS_HOST=localhost
     REDIS_PORT=6379
-    REDIS_USERNAME=your_redis_username
-    REDIS_PASSWORD=your_redis_password
+     #REDIS_USERNAME=your_redis_username (optional)
+     #REDIS_PASSWORD=your_redis_password (optional)
     REDIS_DB=0
 
     # IMPORTANT: Change this to a strong, unique secret key!
