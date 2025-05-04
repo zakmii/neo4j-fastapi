@@ -21,7 +21,7 @@ async def create_user(db: Redis, user: UserCreate) -> UserInDB:
         "email": user.email,
         "hashed_password": hashed_password,
     }
-    # Use hmset (or hset in newer redis-py versions) to store the hash
-    await db.hmset(f"user:{user.username}", user_data)
+    # Use hset to store the hash, as hmset is deprecated in newer redis-py versions
+    await db.hset(f"user:{user.username}", mapping=user_data)
     # Return the created user data, ensuring id is set
     return UserInDB(id=user.username, **user_data)
