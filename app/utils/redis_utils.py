@@ -6,7 +6,7 @@ from app.utils.environment import CONFIG
 
 # Configure logging
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
+# Note: Configure logging in the application entry point instead of here.
 
 
 async def get_redis_connection():
