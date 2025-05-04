@@ -26,6 +26,17 @@ class Neo4jConfig(BaseSettings):
         env_prefix = "NEO4J_"
 
 
+class RedisConfig(BaseSettings):
+    HOST: str = "localhost"
+    PORT: int = 6379
+    DB: int = 0
+    USERNAME: str = None
+    PASSWORD: str = None
+
+    class Config:
+        env_prefix = "REDIS_"
+
+
 class CONFIG:
     NEO4J = Neo4jConfig()
     UVICORN = UvicornConfig()
