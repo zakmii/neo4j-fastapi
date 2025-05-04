@@ -40,3 +40,4 @@ class RedisConfig(BaseSettings):
 class CONFIG:
     NEO4J = Neo4jConfig()
     UVICORN = UvicornConfig()
+    REDIS = RedisConfig()

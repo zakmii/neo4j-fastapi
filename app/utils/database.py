@@ -1,5 +1,6 @@
 # app/database.py
 
+import redis.asyncio as redis
 from neo4j import GraphDatabase
 
 from app.utils.environment import CONFIG
@@ -34,3 +35,53 @@ neo4j_connection = Neo4jConnection(
 # Dependency injection function for FastAPI routes
 def get_neo4j_connection():
     return neo4j_connection
+
+
+# --- Redis Connection ---
+
+
+class RedisConnection:
+    def __init__(
+        self, host: str, port: int, db: int, username: str = None, password: str = None
+    ):
+        self.host = host
+        self.port = port
+        self.db = db
+        self.username = username
+        self.password = password
+        self.pool = redis.ConnectionPool(
+            host=self.host,
+            port=self.port,
+            db=self.db,
+            username=self.username,
+            password=self.password,
+            decode_responses=True,  # Decode responses to strings
+        )
+
+    async def get_connection(self):
+        """Get an async Redis connection from the pool."""
+        return redis.Redis(connection_pool=self.pool)
+
+    async def close(self):
+        """Close the Redis connection pool."""
+        if self.pool:
+            await self.pool.disconnect()
+
+
+# Global instance (Singleton) for the Redis connection
+redis_connection = RedisConnection(
+    host=CONFIG.REDIS.HOST,
+    port=CONFIG.REDIS.PORT,
+    db=CONFIG.REDIS.DB,
+    username=CONFIG.REDIS.USERNAME,
+    password=CONFIG.REDIS.PASSWORD,
+)
+
+
+# Dependency injection function for FastAPI routes
+async def get_redis_connection():
+    """Dependency to get an async Redis connection."""
+    return await redis_connection.get_connection()
+
+
+# See FastAPI documentation for lifespan events
