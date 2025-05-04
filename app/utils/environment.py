@@ -37,7 +37,17 @@ class RedisConfig(BaseSettings):
         env_prefix = "REDIS_"
 
 
+class JWTSettings(BaseSettings):
+    SECRET_KEY: str = "your_default_secret_key"
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+
+    class Config:
+        env_prefix = "JWT_"
+
+
 class CONFIG:
     NEO4J = Neo4jConfig()
     UVICORN = UvicornConfig()
     REDIS = RedisConfig()
+    JWT = JWTSettings()
