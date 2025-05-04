@@ -1,6 +1,12 @@
+import logging
+
 import redis.asyncio as redis
 
 from app.utils.environment import CONFIG
+
+# Configure logging
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 
 async def get_redis_connection():
@@ -15,8 +21,8 @@ async def get_redis_connection():
         )
         connection = redis.Redis.from_pool(pool)
         await connection.ping()  # Verify connection
-        print("Successfully connected to Redis")
+        logger.info("Successfully connected to Redis")
         return connection
     except Exception as e:
-        print(f"Error connecting to Redis: {e}")
+        logger.error(f"Error connecting to Redis: {e}")
         raise
