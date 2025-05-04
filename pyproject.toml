@@ -18,6 +18,7 @@ fastapi = "^0.110.0" # Use specific versions or ranges as needed
 uvicorn = "^0.27.1"
 neo4j = "^5.17.0"
 python-dotenv = "^1.0.1"
+pydantic-settings = "^2.2.1"
 pydantic = {extras = ["email"], version = "^2.6.3"}
 openai = "^1.13.3"
 pykeen = "^1.10.1"
