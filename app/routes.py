@@ -81,14 +81,15 @@ async def get_nodes_by_label(
     db: Neo4jConnection = Depends(get_neo4j_connection),
 ):
     query = f"""
-    MATCH (n:{label})
-    WITH n,
-      CASE
-        WHEN n.id IS NOT NULL THEN {{property: 'id', value: n.id}}
-        ELSE {{property: 'name', value: n.name}}
-      END AS identifier
-    RETURN identifier.value AS identifier
-    LIMIT 10
+        MATCH (n:{label})
+        WITH n,
+        CASE WHEN n.id IS NOT NULL THEN n.id ELSE NULL END AS id,
+        CASE WHEN n.name IS NOT NULL THEN n.name ELSE NULL END AS name
+        WITH n, [p IN [{{k: 'id', v: id}}, {{k: 'name', v: name}}] WHERE p.v IS NOT NULL] AS props
+        LIMIT 10
+        UNWIND props AS prop
+        WITH n, collect([prop.k, prop.v]) AS pairs
+        RETURN apoc.map.fromPairs(pairs) AS identifier
     """
 
     result = db.query(query)
