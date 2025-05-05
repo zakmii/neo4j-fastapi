@@ -2,6 +2,7 @@
 from typing import Optional
 
 from dotenv import find_dotenv, load_dotenv
+from pydantic import EmailStr
 from pydantic_settings import BaseSettings
 
 # Load environment from disk first, then apply any defaults
@@ -49,8 +50,27 @@ class JWTSettings(BaseSettings):
         env_prefix = "JWT_"
 
 
+class MailConfig(BaseSettings):
+    # Email settings
+    USERNAME: Optional[str] = None
+    PASSWORD: Optional[str] = None
+    FROM: Optional[EmailStr] = None
+    PORT: int = 587
+    SERVER: Optional[str] = None
+    FROM_NAME: Optional[str] = "Evo-KG Admin"
+    STARTTLS: bool = True
+    SSL_TLS: bool = False
+    USE_CREDENTIALS: bool = True
+    VALIDATE_CERTS: bool = True
+    ADMIN_EMAIL: Optional[EmailStr] = None  # Admin email to receive notifications
+
+    class Config:
+        env_prefix = "MAIL_"
+
+
 class CONFIG:
-    NEO4J = Neo4jConfig()
     UVICORN = UvicornConfig()
+    NEO4J = Neo4jConfig()
     REDIS = RedisConfig()
     JWT = JWTSettings()
+    MAIL = MailConfig()

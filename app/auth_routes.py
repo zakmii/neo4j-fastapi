@@ -6,6 +6,9 @@ from redis.asyncio import Redis
 
 from app.crud.user import check_email_exists, create_user, get_user_by_username
 from app.models.user import Token, UserCreate, UserPublic
+from app.utils.email_utils import (
+    send_new_user_notification,  # Import the email function
+)
 from app.utils.environment import CONFIG
 from app.utils.redis_utils import get_redis_connection
 from app.utils.security import create_access_token, verify_password
@@ -68,9 +71,15 @@ async def signup_new_user(user: UserCreate, db: Redis = Depends(get_redis_connec
         )
 
     # 4. Create the user
-    created_user = await create_user(db=db, user=user)
+    created_user_db = await create_user(db=db, user=user)
+    # Convert DB model to Pydantic model for response and email
+    created_user_public = UserPublic.model_validate(created_user_db)
+
+    # 5. Send notification email to admin
+    await send_new_user_notification(created_user_public)
+
     # Return UserPublic model which doesn't include the password
-    return UserPublic.model_validate(created_user)
+    return created_user_public
 
 
 @router.post("/login", response_model=Token)
