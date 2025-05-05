@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from redis.asyncio import Redis
 
-from app.crud.user import create_user, get_user_by_username
+from app.crud.user import check_email_exists, create_user, get_user_by_username
 from app.models.user import Token, UserCreate, UserPublic
 from app.utils.environment import CONFIG
 from app.utils.redis_utils import get_redis_connection
@@ -12,24 +12,62 @@ from app.utils.security import create_access_token, verify_password
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
+# Define common free email domains to disallow
+DISALLOWED_FREE_EMAIL_DOMAINS = {
+    "gmail.com",
+    "hotmail.com",
+    "outlook.com",
+    "yahoo.com",
+    "aol.com",
+    "msn.com",
+    "live.com",
+    "mail.com",
+    "gmx.com",
+    "gmx.us",
+    "icloud.com",
+    "yandex.com",
+    "zoho.com",
+    "protonmail.com",
+    # Add more free email providers as needed
+}
+
 
 @router.post("/signup", response_model=UserPublic, status_code=status.HTTP_201_CREATED)
 async def signup_new_user(user: UserCreate, db: Redis = Depends(get_redis_connection)):
-    """Registers a new user."""
+    """Registers a new user after validating email domain and existence."""
+    # 1. Check if email domain is from a disallowed free provider
+    try:
+        email_domain = user.email.split("@")[1].lower()
+        print(f"Email domain extracted: {email_domain}")
+    except IndexError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid email format.",
+        )
+
+    if email_domain in DISALLOWED_FREE_EMAIL_DOMAINS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Signups using common free email providers are not allowed. Please use an organizational email.",
+        )
+
+    # 2. Check if username already exists
     db_user = await get_user_by_username(db, username=user.username)
     if db_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Username already registered",
         )
-    # Check for existing email if desired (optional)
-    # email_exists = await check_email_exists(db, user.email) # Implement this if needed
-    # if email_exists:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_400_BAD_REQUEST,
-    #         detail="Email already registered",
-    #     )
 
+    # 3. Check if email already exists
+    email_exists = await check_email_exists(db, user.email)
+    if email_exists:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered",
+        )
+
+    # 4. Create the user
     created_user = await create_user(db=db, user=user)
     # Return UserPublic model which doesn't include the password
     return UserPublic.model_validate(created_user)
