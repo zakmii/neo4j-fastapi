@@ -1,5 +1,4 @@
 # neo4j-fastapi
-
 API for interacting with the Evo-KG knowledge graph using Neo4j, built with FastAPI.
 
 ## Setup and Running

@@ -142,7 +142,6 @@ cython_debug/
 TODO
 .vercel
 
-
 #data files
 *.pkl
 *.csv
