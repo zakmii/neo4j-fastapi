@@ -200,7 +200,7 @@ async def search_biological_entities(
     query = """
     WITH $targetTerm AS targetTerm
     MATCH (e)
-    WHERE toLower(e.name) CONTAINS toLower(targetTerm) OR toLower(e.id) CONTAINS toLower(targetTerm)
+    WHERE toLower(e.name) CONTAINS toLower(targetTerm) OR toLower(e.id) CONTAINS toLower(targetTerm) OR toLower(e.alternativename) CONTAINS toLower(targetTerm)
     WITH e, labels(e) AS entityTypes
     ORDER BY entityTypes[0] ASC, size(e.name) ASC
     WITH entityTypes[0] AS entityType,
