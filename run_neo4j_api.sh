@@ -8,7 +8,7 @@ conda activate pytorch
 
 REPO_DIR="/home/pushpendrag/ankiss/neo4j-fastapi"
 REPO_URL="https://github.com/zakmii/neo4j-fastapi"
-BRANCH="generalized_search"
+BRANCH="main"
 
 echo "Checking for existing repository at $REPO_DIR..."
 
