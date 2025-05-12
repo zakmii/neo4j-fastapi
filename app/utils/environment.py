@@ -68,9 +68,17 @@ class MailConfig(BaseSettings):
         env_prefix = "MAIL_"
 
 
+class AdminSettings(BaseSettings):
+    PASSWORD: str  # For the admin user/operations
+
+    class Config:
+        env_prefix = "ADMIN_"
+
+
 class CONFIG:
     UVICORN = UvicornConfig()
     NEO4J = Neo4jConfig()
     REDIS = RedisConfig()
     JWT = JWTSettings()
     MAIL = MailConfig()
+    ADMIN = AdminSettings()

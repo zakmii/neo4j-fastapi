@@ -36,3 +36,17 @@ async def create_user(db: Redis, user: UserCreate) -> UserInDB:
     await db.sadd(EMAIL_SET_KEY, user.email)
     # Return the created user data, ensuring id is set
     return UserInDB(id=user.username, **user_data)
+
+
+async def update_user_query_limit_data(
+    db: Redis, username: str, query_limits: int, last_query_reset: str
+) -> bool:
+    """Updates the query limits and last reset time for a user in Redis."""
+    user_key = f"user:{username}"
+    if not await db.exists(user_key):
+        return False  # User not found
+    await db.hset(
+        user_key,
+        mapping={"query_limits": query_limits, "last_query_reset": last_query_reset},
+    )
+    return True

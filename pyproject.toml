@@ -26,6 +26,7 @@ pandas = "^2.2.1"
 torch = "^2.2.1"
 redis = "^6.0.0" # Added redis client
 passlib = {extras = ["bcrypt"], version = "^1.7.4"} # Added for password hashing
+bcrypt = "^4.1.0" # Explicitly added bcrypt
 python-jose = {extras = ["cryptography"], version = "^3.3.0"} # Added for JWT
 python-multipart = "^0.0.9" # Added for form data handling
 fastapi-mail = {extras = ["pyproject"], version = "^1.4.2"}

@@ -4,7 +4,7 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app import auth_routes, demo_routes, model_routes, routes
+from app import auth_routes, demo_routes, model_routes, routes, user_routes
 from app.utils.environment import CONFIG
 
 app = FastAPI(
@@ -14,7 +14,7 @@ app = FastAPI(
 
 app.include_router(routes.router)
 app.include_router(auth_routes.router)
-
+app.include_router(user_routes.router)
 
 logger = logging.getLogger("uvicorn.error")
 

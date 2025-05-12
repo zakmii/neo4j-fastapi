@@ -1,9 +1,13 @@
+from datetime import datetime  # Added for query limit reset logic
+
 from pydantic import BaseModel, EmailStr, Field
 
 
 class UserBase(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
     email: EmailStr
+    query_limits: int = Field(default=5)
+    last_query_reset: datetime = Field(default_factory=datetime.utcnow)
 
 
 class UserCreate(UserBase):
@@ -33,3 +37,13 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     username: str | None = None
+
+
+class UserQueryLimitUpdate(BaseModel):
+    query_limits: int
+    last_query_reset: datetime
+
+
+class AdminUserQueryLimitUpdate(BaseModel):
+    admin_password: str
+    new_query_limit: int
