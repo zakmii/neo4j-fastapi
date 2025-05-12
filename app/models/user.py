@@ -42,3 +42,8 @@ class TokenData(BaseModel):
 class UserQueryLimitUpdate(BaseModel):
     query_limits: int
     last_query_reset: datetime
+
+
+class AdminUserQueryLimitUpdate(BaseModel):
+    admin_password: str
+    new_query_limit: int
