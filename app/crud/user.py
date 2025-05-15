@@ -28,6 +28,9 @@ async def create_user(db: Redis, user: UserCreate) -> UserInDB:
     user_data = {
         "username": user.username,
         "email": user.email,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "organization": user.organization,
         "hashed_password": hashed_password,
     }
     # Use hset to store the hash, as hmset is deprecated in newer redis-py versions
