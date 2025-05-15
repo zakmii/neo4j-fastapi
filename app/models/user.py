@@ -6,6 +6,9 @@ from pydantic import BaseModel, EmailStr, Field
 class UserBase(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
     email: EmailStr
+    first_name: str = Field(..., min_length=1, max_length=50)
+    last_name: str = Field(..., min_length=1, max_length=50)
+    organization: str = Field(..., min_length=1, max_length=100)
     query_limits: int = Field(default=5)
     last_query_reset: datetime = Field(default_factory=datetime.utcnow)
 

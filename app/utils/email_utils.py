@@ -1,6 +1,6 @@
-import datetime  # Import datetime
+import datetime
 import logging
-from pathlib import Path  # Import Path
+from pathlib import Path
 
 from fastapi_mail import ConnectionConfig, FastMail, MessageSchema
 
@@ -143,7 +143,9 @@ async def send_new_user_notification(user: UserPublic):
                     <ul>
                         <li><strong>Username:</strong> {user.username}</li>
                         <li><strong>Email:</strong> {user.email}</li>
-                        <!-- Add other relevant UserPublic fields here if needed -->
+                        <li><strong>First Name:</strong> {user.first_name}</li>
+                        <li><strong>Last Name:</strong> {user.last_name}</li>
+                        <li><strong>Organization:</strong> {user.organization}</li>
                     </ul>
                 </div>
                 <p>You may need to review or take action regarding this new registration.</p>
