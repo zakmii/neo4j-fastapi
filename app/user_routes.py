@@ -1,10 +1,12 @@
 from datetime import datetime  # Added for query limit reset
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import EmailStr  # Added for email validation
 from redis.asyncio import Redis
 
 from app.crud.user import get_user_by_username, update_user_query_limit_data
 from app.models.user import AdminUserQueryLimitUpdate, UserPublic, UserQueryLimitUpdate
+from app.utils.email_utils import send_welcome_email  # Added import
 from app.utils.environment import CONFIG
 from app.utils.redis_utils import get_redis_connection
 from app.utils.security import (
@@ -106,3 +108,27 @@ async def admin_update_user_query_limit(
             detail="Failed to retrieve updated user details post-update",
         )
     return UserPublic.model_validate(updated_user)
+
+
+@router.post("/send_welcome_email")
+async def send_welcome_email_route(
+    email_to: EmailStr,
+):
+    """
+    Sends a welcome email to the specified email address.
+    """
+    # Optional: Add admin role check here if only admins should send welcome emails
+    # For example, if current_user.role != "admin":
+    #     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized")
+    try:
+        await send_welcome_email(email_to)
+        return {"message": f"Welcome email successfully sent to {email_to}"}
+    except HTTPException as e:
+        # Re-raise HTTPExceptions from send_welcome_email
+        raise e
+    except Exception as e:
+        # Catch any other unexpected errors
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An unexpected error occurred: {str(e)}",
+        )

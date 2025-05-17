@@ -8,6 +8,7 @@ from app.crud.user import check_email_exists, create_user, get_user_by_username
 from app.models.user import Token, UserCreate, UserPublic
 from app.utils.email_utils import (
     send_new_user_notification,  # Import the email function
+    send_welcome_email,  # Added import
 )
 from app.utils.environment import CONFIG
 from app.utils.redis_utils import get_redis_connection
@@ -77,6 +78,9 @@ async def signup_new_user(user: UserCreate, db: Redis = Depends(get_redis_connec
 
     # 5. Send notification email to admin
     await send_new_user_notification(created_user_public)
+
+    # 6. Send welcome email to the new user
+    await send_welcome_email(email_to=created_user_public.email)
 
     # Return UserPublic model which doesn't include the password
     return created_user_public
