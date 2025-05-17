@@ -1,6 +1,9 @@
 from datetime import datetime  # Added for query limit reset
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi_limiter.depends import (
+    RateLimiter,  # Corrected import path if necessary, or ensure it's available
+)
 from pydantic import EmailStr  # Added for email validation
 from redis.asyncio import Redis
 
@@ -18,7 +21,11 @@ from app.utils.security import (
 router = APIRouter(prefix="/users", tags=["Users"])
 
 
-@router.get("/me", response_model=UserPublic)
+@router.get(
+    "/me",
+    response_model=UserPublic,
+    dependencies=[Depends(RateLimiter(times=10, minutes=1))],
+)  # Changed to 10 per minute
 async def read_users_me(
     current_user: UserPublic = Depends(get_current_active_user),
     db: Redis = Depends(get_redis_connection),
@@ -32,7 +39,11 @@ async def read_users_me(
     return UserPublic.model_validate(user_in_db)
 
 
-@router.put("/me/query_limits", response_model=UserPublic)
+@router.put(
+    "/me/query_limits",
+    response_model=UserPublic,
+    dependencies=[Depends(RateLimiter(times=10, minutes=1))],
+)  # Changed to 10 per minute
 async def update_current_user_query_limits(
     query_limit_data: UserQueryLimitUpdate,
     current_user: UserPublic = Depends(get_current_active_user),
@@ -62,7 +73,11 @@ async def update_current_user_query_limits(
     return UserPublic.model_validate(updated_user)
 
 
-@router.put("/{username}/query_limit_admin", response_model=UserPublic)
+@router.put(
+    "/{username}/query_limit_admin",
+    response_model=UserPublic,
+    dependencies=[Depends(RateLimiter(times=10, minutes=1))],
+)  # Changed to 10 per minute
 async def admin_update_user_query_limit(
     username: str,
     update_data: AdminUserQueryLimitUpdate,
@@ -110,7 +125,9 @@ async def admin_update_user_query_limit(
     return UserPublic.model_validate(updated_user)
 
 
-@router.post("/send_welcome_email")
+@router.post(
+    "/send_welcome_email", dependencies=[Depends(RateLimiter(times=10, minutes=1))]
+)  # Changed to 10 per minute
 async def send_welcome_email_route(
     email_to: EmailStr,
 ):
