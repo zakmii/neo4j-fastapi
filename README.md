@@ -22,24 +22,48 @@ This project uses [Poetry](https://python-poetry.org/) for dependency management
     This will create a virtual environment and install all necessary packages specified in `pyproject.toml`.
 
 4.  **Set Up Environment Variables:**
-    Create a `.env` file in the project root directory (`d:\neo4j-fastapi`). This file should contain the necessary configuration variables. Refer to `app/utils/environment.py` for the required variables (e.g., `NEO4J_URI`, `NEO4J_USERNAME`, `NEO4J_PASSWORD`, `REDIS_HOST`, `REDIS_PORT`, `JWT_SECRET_KEY`).
+    Create a `.env` file in the project root directory (`d:\neo4j-fastapi`). This file should contain the necessary configuration variables. You can copy the `.env.example` file to `.env` and update the values.
 
-    Example `.env` file:
+    Example `.env` file (from `.env.example`):
     ```env
-    NEO4J_URI=bolt://localhost:7687
-    NEO4J_USERNAME=neo4j
-    NEO4J_PASSWORD=your_neo4j_password
+#Neo4j settings
+NEO4J_URI = neo4j://192.168.24.13:7687
+NEO4J_USER = neo4j
+NEO4J_PASSWORD = jj7yVSv7Wvo7gxLF0D4XlQoUcesVJ6UNAARsFlK1AIc
 
-    REDIS_HOST=localhost
-    REDIS_PORT=6379
-     #REDIS_USERNAME=your_redis_username (optional)
-     #REDIS_PASSWORD=your_redis_password (optional)
-    REDIS_DB=0
+#Redis settings
+REDIS_HOST = localhost
+REDIS_PORT = 6379
+REDIS_USERNAME = default
+REDIS_PASSWORD = yourpassword
+REDIS_DB = 0
 
-    # IMPORTANT: Change this to a strong, unique secret key!
-    JWT_SECRET_KEY=your_very_strong_secret_key_here
-    JWT_ALGORITHM=HS256
-    JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
+#JWT settings
+JWT_SECRET_KEY = your_jwt_secret_key
+JWT_ALGORITHM = HS256
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+#Optional Uvicorn settings (defaults shown)
+UVICORN_HOST = 0.0.0.0
+UVICORN_PORT = 1026
+UVICORN_WORKERS = 4
+UVICORN_RELOAD_ON_CHANGE = True
+
+# Email Configuration (for sending notifications)
+MAIL_USERNAME = your_email_username@example.com
+MAIL_PASSWORD = your_email_password
+MAIL_FROM = sender@example.com
+MAIL_PORT = 587
+MAIL_SERVER = smtp.example.com
+MAIL_FROM_NAME = "Your App Name"
+MAIL_STARTTLS = True
+MAIL_SSL_TLS = False
+MAIL_USE_CREDENTIALS = True
+MAIL_VALIDATE_CERTS = True
+MAIL_ADMIN_EMAIL = admin@example.com # Email address to receive admin notifications
+
+# Admin Configuration
+ADMIN_PASSWORD=your_admin_password_here
     ```
 
 5.  **Run the Application:**

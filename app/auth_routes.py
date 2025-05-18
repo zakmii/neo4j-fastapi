@@ -2,6 +2,9 @@ from datetime import timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi_limiter.depends import (
+    RateLimiter,  # Corrected import path if necessary, or ensure it's available
+)
 from redis.asyncio import Redis
 
 from app.crud.user import check_email_exists, create_user, get_user_by_username
@@ -36,7 +39,14 @@ DISALLOWED_FREE_EMAIL_DOMAINS = {
 }
 
 
-@router.post("/signup", response_model=UserPublic, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/signup",
+    response_model=UserPublic,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[
+        Depends(RateLimiter(times=10, minutes=1))
+    ],  # Changed to 10 per minute
+)
 async def signup_new_user(user: UserCreate, db: Redis = Depends(get_redis_connection)):
     """Registers a new user after validating email domain and existence."""
     # 1. Check if email domain is from a disallowed free provider
@@ -86,7 +96,13 @@ async def signup_new_user(user: UserCreate, db: Redis = Depends(get_redis_connec
     return created_user_public
 
 
-@router.post("/login", response_model=Token)
+@router.post(
+    "/login",
+    response_model=Token,
+    dependencies=[
+        Depends(RateLimiter(times=10, minutes=1))
+    ],  # Changed to 10 per minute
+)
 async def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Redis = Depends(get_redis_connection),

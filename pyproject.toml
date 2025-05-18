@@ -30,6 +30,7 @@ bcrypt = "^4.1.0" # Explicitly added bcrypt
 python-jose = {extras = ["cryptography"], version = "^3.3.0"} # Added for JWT
 python-multipart = "^0.0.9" # Added for form data handling
 fastapi-mail = {extras = ["pyproject"], version = "^1.4.2"}
+fastapi-limiter = "*"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^3.6.2"
