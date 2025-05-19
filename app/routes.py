@@ -76,7 +76,7 @@ async def get_sample_triples(
 async def get_nodes_by_label(
     label: str = Query(
         ...,
-        description="The label of the nodes to retrieve (e.g. Gene, Protein, Disease, Chemical, Phenotype, Tissue, Anatomy, BiologicalProcess, MolecularFunction, CellularComponent, Pathway, Mutation)",
+        description="The label of the nodes to retrieve (e.g. Gene, Protein, Disease, ChemicalEntity, Phenotype, Tissue, Anatomy, BiologicalProcess, MolecularFunction, CellularComponent, Pathway, Mutation, PMID, Species or PlantExtract)",
     ),
     db: Neo4jConnection = Depends(get_neo4j_connection),
 ):
@@ -181,7 +181,7 @@ async def get_subgraph(
 @router.get(
     "/search_biological_entities",
     response_model=List[Dict[str, Any]],
-    description="Search biological entities such as Gene, Protein, Disease, Chemical, Phenotype, Tissue, Anatomy, BiologicalProcess, MolecularFunction, CellularComponent, Pathway or Mutation by name or id",
+    description="Search biological entities such as Gene, Protein, Disease, ChemicalEntity, Phenotype, Tissue, Anatomy, BiologicalProcess, MolecularFunction, CellularComponent, Pathway, Mutation, PMID, Species or PlantExtract by name or id",
     summary="Search for biological entities by name or id",
     response_description="Returns a list of entity types with their top 3 matching entities",
     operation_id="search_biological_entities",
@@ -193,7 +193,7 @@ async def search_biological_entities(
     ),
     db: Neo4jConnection = Depends(get_neo4j_connection),
 ):
-    """Search biological entities such as Gene, Protein, Disease, Chemical, Phenotype, Tissue, Anatomy, BiologicalProcess, MolecularFunction, CellularComponent, Pathway or Mutation by name or id"""
+    """Search biological entities such as Gene, Protein, Disease, ChemicalEntity, Phenotype, Tissue, Anatomy, BiologicalProcess, MolecularFunction, CellularComponent, Pathway, Mutation, PMID, Species or PlantExtract by name or id"""
     # List of properties to exclude for optimization
     ignore_properties = ["sequence", "seq", "type"]
 
