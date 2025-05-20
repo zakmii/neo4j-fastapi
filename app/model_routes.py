@@ -12,7 +12,7 @@ from app.utils.schema import (
 router = APIRouter()
 
 # Define the path for data loading
-model_path = "app/data/model_epoch_99.pkl"
+model_path = "app/data/model_epoch_94.pkl"
 node_mappings_path = "app/data/node_id_H_KG.pkl"
 
 # Attempt to load the pre-trained PyKEEN model
@@ -38,74 +38,131 @@ except FileNotFoundError:
 except Exception as e:
     raise Exception(f"Error loading node mappings: {e!s}")
 
+###Now we fetch info from the database after every prediction which gets more information###
+
 # Load the mappings of C_ID with chemical name
-try:
-    chemical_mappings = pd.read_csv("app/data/ALL_KG_ALL_CHEMICALS_05_02.csv")
-except FileNotFoundError:
-    raise Exception(
-        "Chemical mappings file not found. Please ensure ALL_KG_ALL_CHEMICALS_05_02.csv exists in the app/data directory.",
-    )
-except Exception as e:
-    raise Exception(f"Error loading chemical mappings: {e!s}")
+# try:
+#     chemical_mappings = pd.read_csv("app/data/ALL_KG_ALL_CHEMICALS_05_02.csv")
+# except FileNotFoundError:
+#     raise Exception(
+#         "Chemical mappings file not found. Please ensure ALL_KG_ALL_CHEMICALS_05_02.csv exists in the app/data directory.",
+#     )
+# except Exception as e:
+#     raise Exception(f"Error loading chemical mappings: {e!s}")
 
-# Convert chemical mapping to a dictionary for fast lookups
-chemical_mapping_dict = dict(
-    zip(chemical_mappings["MY_UNIQ_ID"], chemical_mappings["Chemicals"]),
-)
+# # Convert chemical mapping to a dictionary for fast lookups
+# chemical_mapping_dict = dict(
+#     zip(chemical_mappings["MY_UNIQ_ID"], chemical_mappings["Chemicals"]),
+# )
 
-# edge_mapping = {'drug_drug' : 0,
-#                 'drug_gene' : 1,
-#                 'gene_drug' : 2,
-#                 'drug_protein' : 3,
-#                 'gene_gene' : 4,
-#                 'gene_metabolite' : 5,
-#                 'gene_phenotype' :6 ,
-#                 'protein_drug' : 7,
-#                 'protein_protein' : 8,
-#                 'phenotype_phenotype': 9,
-#                 'disease_gene': 10,
-#                 'disease_protein': 11,
-#                 'disease_phenotype': 12,
-#                 'disease_drug': 13,
-#                 'drug_disease': 14,
-#                 'disease_disease': 15,
-#                 'gene_disease': 16,
-#                 'gene_protein': 17,
-#                 'protein_disease': 18,
-#                 'protein_gene': 19,
-#                 'drug_agingphenotype': 20,
-#                 'gene_agingphenotype': 21,
-#                 'gene_hallmark': 22,
-#                 'metabolite_metabolite': 23,
-#                 'gene_epigeneticalterations': 24,
-#                 'gene_genomicinstability': 25,
-#                 'gene_tissue': 26,
-#                 'protein_tissue': 27,
-#                 'protein_agingphenotype': 28,
-#                 'intervention_hallmark': 29,
-#                 'hallmark_phenotype': 30
-#                 }
+
 edge_mapping = {
-    "gene_anatomy": 0,
-    "anatomy_gene": 0,
-    "gene_biologicalprocess": 1,
-    "biologicalprocess_gene": 1,
-    "gene_chemicalentity": 2,
-    "chemicalentity_gene": 2,
-    "gene_disease": 3,
-    "disease_gene": 3,
-    "gene_pathway": 4,
-    "pathway_gene": 4,
-    "disease_anatomy": 5,
-    "anatomy_disease": 5,
+    "phenotype_chemicalentity": 0,
+    "chemicalentity_phenotype": 0,
+    "mutation_disease": 1,  # reverse relation exists with different ID (40)
+    "molecularfunction_chemicalentity": 2,
+    "chemicalentity_molecularfunction": 2,
+    "disease_anatomy": 3,
+    "anatomy_disease": 3,
+    "chemicalentity_disease": 4,  # reverse relation exists with different ID (39)
+    "disease_disease": 5,
+    "biologicalprocess_gene": 6,  # reverse relation exists with different ID (46)
+    "protein_protein": 7,
+    "gene_phenotype": 8,  # reverse relation exists with different ID (25)
+    "protein_disease": 9,
+    "disease_protein": 9,
+    "anatomy_gene": 10,  # reverse relation exists with different ID (36)
+    "chemicalentity_biologicalprocess": 11,  # reverse relation exists with different ID (57)
+    "disease_gene": 12,  # reverse relation exists with different ID (16)
+    "gene_cellularcomponent": 13,  # reverse relation exists with different ID (15)
+    "chemicalentity_chemicalentity": 14,
+    "cellularcomponent_gene": 15,
+    "gene_disease": 16,
+    "protein_cellularcomponent": 17,
+    "cellularcomponent_protein": 17,
+    "protein_phenotype": 18,
+    "phenotype_protein": 18,
+    "mutation_protein": 19,
+    "protein_mutation": 19,
+    "chemicalentity_gene": 20,  # reverse relation exists with different ID (41)
+    "chemicalentity_tissue": 21,
+    "tissue_chemicalentity": 21,
+    "chemicalentity_protein": 22,
+    "protein_chemicalentity": 22,
+    "biologicalprocess_biologicalprocess": 23,
+    "phenotype_phenotype": 24,
+    "phenotype_gene": 25,
+    "chemicalentity_inhibits_biologicalprocess": 26,
+    "biologicalprocess_inhibits_chemicalentity": 26,  # Assuming "inhibits" stays in middle
+    "gene_inhibits_biologicalprocess": 27,
+    "biologicalprocess_inhibits_gene": 27,  # Assuming "inhibits" stays in middle
+    "protein_biologicalprocess": 28,
+    "biologicalprocess_protein": 28,
+    "gene_promotes_biologicalprocess": 29,
+    "biologicalprocess_promotes_gene": 29,  # Assuming "promotes" stays in middle
+    "gene_molecularfunction": 30,
+    "molecularfunction_gene": 30,
+    "gene_pathway": 31,  # reverse relation exists with different ID (38)
+    "chemicalentity_pathway": 32,
+    "pathway_chemicalentity": 32,
+    "gene_tissue": 33,
+    "tissue_gene": 33,
+    "disease_phenotype": 34,  # reverse relation exists with different ID (37)
+    "chemicalentity_mutation": 35,
+    "mutation_chemicalentity": 35,
+    "gene_anatomy": 36,
+    "phenotype_disease": 37,
+    "pathway_gene": 38,
+    "disease_chemicalentity": 39,
+    "disease_mutation": 40,
+    "gene_chemicalentity": 41,
+    "protein_pathway": 42,
+    "pathway_protein": 42,
+    "gene_protein": 43,
+    "protein_gene": 43,
+    "gene_noeffect_biologicalprocess": 44,
+    "biologicalprocess_noeffect_gene": 44,  # Assuming "noeffect" stays in middle
+    "chemicalentity_promotes_biologicalprocess": 45,
+    "biologicalprocess_promotes_chemicalentity": 45,  # Assuming "promotes" stays in middle
+    "gene_biologicalprocess": 46,
+    "protein_molecularfunction": 47,
+    "molecularfunction_protein": 47,
+    "mutation_gene": 48,  # reverse relation exists with different ID (51)
+    "gene_gene": 49,
+    "molecularfunction_molecularfunction": 50,
+    "gene_mutation": 51,
+    "molecularfunction_biologicalprocess": 52,
+    "biologicalprocess_molecularfunction": 52,
+    "protein_tissue": 53,
+    "tissue_protein": 53,
+    "cellularcomponent_cellularcomponent": 54,
+    "pathway_pathway": 55,
+    "anatomy_anatomy": 56,
+    "biologicalprocess_chemicalentity": 57,
+    "plantextract_chemicalentity": 58,
+    "chemicalentity_plantextract": 58,
+    "plantextract_disease": 59,
+    "disease_plantextract": 59,
+    "pmid_cellularcomponent": 60,
+    "cellularcomponent_pmid": 60,
+    "pmid_chemicalentity": 61,
+    "chemicalentity_pmid": 61,
+    "pmid_disease": 62,
+    "disease_pmid": 62,
+    "pmid_protein": 63,
+    "protein_pmid": 63,
+    "pmid_tissue": 64,
+    "tissue_pmid": 64,
+    "species_associatedwith_nodes": 65,
+    "nodes_associatedwith_species": 65,  # Assuming "associatedwith" stays in middle
 }
 
 # def get_NodeID(node: str) -> int:
 #     return node_mappings[node_mappings['Node'] == node]['MappedID'].values[0].item()
 
 
-def get_NodeName(node_id: int) -> str:
-    return node_mappings[node_mappings["MappedID"] == node_id]["Node"].values[0].item()
+# def get_NodeName(node_id: int) -> str:
+#     return node_mappings[node_mappings["MappedID"] == node_id]["Node"].values[0].item()
 
 
 def get_EdgeID(edge: str) -> int:
@@ -146,10 +203,12 @@ async def predict_tail(
         df = df.merge(node_mappings, left_on="tail_id", right_on="MappedID", how="left")
         df = df[["Node", "score"]]
 
+        ###Now we fetch info from the database after every prediction which gets more information###
+
         # Replace tail names with corresponding Chemicals names using mapping
-        df["Node"] = df["Node"].apply(
-            lambda node: chemical_mapping_dict.get(node, node),
-        )
+        # df["Node"] = df["Node"].apply(
+        #     lambda node: chemical_mapping_dict.get(node, node),
+        # )
 
         # Format the result for the response
         predictions = [
