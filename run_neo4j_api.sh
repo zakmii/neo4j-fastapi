@@ -28,8 +28,8 @@ echo "Copying .env file..."
 cp /home/pushpendrag/ankiss/neo4j_env/.env "$REPO_DIR/"
 
 echo "Copying required data files..."
-cp /home/pushpendrag/ankiss/neo4j_env/node_id_H_KG.pkl "$REPO_DIR/app/data/"
-cp /home/pushpendrag/ankiss/neo4j_env/model_epoch_94.pkl "$REPO_DIR/app/data/"
+cp /home/pushpendrag/ankiss/neo4j_env/node_id_final.pkl "$REPO_DIR/app/data/"
+cp /home/pushpendrag/ankiss/neo4j_env/model_epoch_final.pkl "$REPO_DIR/app/data/"
 cp /16Tbdrive2/arushis/KG_AUGMENTATION/PUSHPA_REFINED_KG_DATA/arushi/MY_REFINED_FILES/ALL_KG_ALL_CHEMICALS_05_02.csv "$REPO_DIR/app/data/"
 
 echo "Killing any existing Gunicorn processes for user $(whoami)..."

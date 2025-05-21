@@ -12,8 +12,8 @@ from app.utils.schema import (
 router = APIRouter()
 
 # Define the path for data loading
-model_path = "app/data/model_epoch_94.pkl"
-node_mappings_path = "app/data/node_id_H_KG.pkl"
+model_path = "app/data/model_epoch_final.pkl"
+node_mappings_path = "app/data/node_id_final.pkl"
 
 # Attempt to load the pre-trained PyKEEN model
 try:
