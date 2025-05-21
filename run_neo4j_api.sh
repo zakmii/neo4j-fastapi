@@ -41,6 +41,6 @@ pkill -f "python -m app.main" -u "$(whoami)" || true
 echo "Starting application server using Poetry..."
 cd "$REPO_DIR"
 # Run the app/main.py script using poetry, which will use the Uvicorn settings in the file
-nohup poetry run gunicorn -w 4 --timeout 60 -k uvicorn.workers.UvicornWorker app.main:app --bind 0.0.0.0:1026 > neo4j_api_logs.log 2>&1 &
+nohup poetry run gunicorn -w 2 --timeout 60 -k uvicorn.workers.UvicornWorker app.main:app --bind 0.0.0.0:1026 > neo4j_api_logs.log 2>&1 &
 
 echo "Deployment completed successfully."
