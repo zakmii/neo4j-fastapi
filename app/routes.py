@@ -68,9 +68,9 @@ async def get_sample_triples(
 @router.get(
     "/get_nodes_by_label",
     response_model=List[dict],
-    description="Retrieve 10 nodes of a given type, returning either id or name as available.",
-    summary="Fetch nodes by label",
-    response_description="Returns a list of up to 10 nodes with their primary identifiers",
+    description="Retrieve 10 nodes of a given type, returning all their properties.",
+    summary="Fetch nodes by label with all properties",
+    response_description="Returns a list of up to 10 nodes, each with all its properties.",
     operation_id="get_nodes_by_label",
 )
 async def get_nodes_by_label(
@@ -82,24 +82,18 @@ async def get_nodes_by_label(
 ):
     query = f"""
         MATCH (n:{label})
-        WITH n,
-        CASE WHEN n.id IS NOT NULL THEN n.id ELSE NULL END AS id,
-        CASE WHEN n.name IS NOT NULL THEN n.name ELSE NULL END AS name
-        WITH n, [p IN [{{k: 'id', v: id}}, {{k: 'name', v: name}}] WHERE p.v IS NOT NULL] AS props
+        RETURN properties(n) AS node_properties
         LIMIT 10
-        UNWIND props AS prop
-        WITH n, collect([prop.k, prop.v]) AS pairs
-        RETURN apoc.map.fromPairs(pairs) AS identifier
     """
 
-    result = db.query(query)
-    if not result:
+    records = db.query(query)
+    if not records:
         raise HTTPException(
             status_code=404,
             detail=f"No nodes found for label '{label}'",
         )
 
-    return result
+    return [record["node_properties"] for record in records]
 
 
 @router.get(
@@ -200,7 +194,9 @@ async def search_biological_entities(
     query = """
     WITH $targetTerm AS targetTerm
     MATCH (e)
-    WHERE toLower(e.name) CONTAINS toLower(targetTerm) OR toLower(e.id) CONTAINS toLower(targetTerm) OR toLower(e.alternativename) CONTAINS toLower(targetTerm)
+    WHERE (e.name IS NOT NULL AND toLower(e.name) CONTAINS toLower(targetTerm)) OR
+          (e.id IS NOT NULL AND toLower(e.id) CONTAINS toLower(targetTerm)) OR
+          (e.alternativename IS NOT NULL AND toLower(e.alternativename) CONTAINS toLower(targetTerm))
     WITH e, labels(e) AS entityTypes
     ORDER BY entityTypes[0] ASC, size(e.name) ASC
     WITH entityTypes[0] AS entityType,
