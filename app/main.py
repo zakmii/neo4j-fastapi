@@ -8,7 +8,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi_limiter import FastAPILimiter
 from fastapi_limiter.depends import RateLimiter
 
-from app import auth_routes, demo_routes, model_routes, routes, user_routes
+from app import (
+    auth_routes,
+    demo_routes,
+    model_routes,
+    routes,
+    user_routes,
+    utils_routes,
+)
 from app.utils.environment import CONFIG
 
 
@@ -40,8 +47,9 @@ app = FastAPI(
 )
 
 app.include_router(routes.router)
-app.include_router(auth_routes.router)
+app.include_router(auth_routes.router, prefix="/auth", tags=["auth"])
 app.include_router(user_routes.router)
+app.include_router(utils_routes.router, prefix="/utils", tags=["utils"])
 
 logger = logging.getLogger("uvicorn.error")
 
