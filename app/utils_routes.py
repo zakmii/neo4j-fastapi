@@ -3,7 +3,7 @@ from fastapi import APIRouter, Body, HTTPException
 
 from app.models.utils_models import OpenAIKeyRequest, OpenAIKeyValidationResponse
 
-router = APIRouter()
+router = APIRouter(prefix="/utils", tags=["utils"])
 
 
 @router.post("/validate_openai_key", response_model=OpenAIKeyValidationResponse)

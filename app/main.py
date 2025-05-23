@@ -47,9 +47,9 @@ app = FastAPI(
 )
 
 app.include_router(routes.router)
-app.include_router(auth_routes.router, tags=["auth"])
+app.include_router(auth_routes.router)
 app.include_router(user_routes.router)
-app.include_router(utils_routes.router, tags=["utils"])
+app.include_router(utils_routes.router)
 
 logger = logging.getLogger("uvicorn.error")
 
