@@ -3,19 +3,21 @@ from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi_limiter.depends import (
-    RateLimiter,  # Corrected import path if necessary, or ensure it's available
+    RateLimiter,
 )
 from redis.asyncio import Redis
 
 from app.crud.user import check_email_exists, create_user, get_user_by_username
 from app.models.user import Token, UserCreate, UserPublic
+from app.models.utils_models import OpenAIKeyRequest
 from app.utils.email_utils import (
-    send_new_user_notification,  # Import the email function
-    send_welcome_email,  # Added import
+    send_new_user_notification,
+    send_welcome_email,
 )
 from app.utils.environment import CONFIG
 from app.utils.redis_utils import get_redis_connection
 from app.utils.security import create_access_token, verify_password
+from app.utils_routes import validate_openai_key
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -43,12 +45,20 @@ DISALLOWED_FREE_EMAIL_DOMAINS = {
     "/signup",
     response_model=UserPublic,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[
-        Depends(RateLimiter(times=10, minutes=1))
-    ],  # Changed to 10 per minute
+    dependencies=[Depends(RateLimiter(times=10, minutes=1))],
 )
 async def signup_new_user(user: UserCreate, db: Redis = Depends(get_redis_connection)):
     """Registers a new user after validating email domain and existence."""
+    # 0. Validate OpenAI API Key
+    key_validation_response = await validate_openai_key(
+        OpenAIKeyRequest(api_key=user.OPENAI_API_KEY)
+    )
+    if not key_validation_response.is_valid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid OpenAI API Key.",
+        )
+
     # 1. Check if email domain is from a disallowed free provider
     try:
         email_domain = user.email.split("@")[1].lower()
