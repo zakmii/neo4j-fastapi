@@ -192,14 +192,10 @@ async def search_biological_entities(
     ignore_properties = ["type", "id_lower", "name_lower"]
 
     query = """
-    WITH $targetTerm AS targetTerm
-    MATCH (e)
-    WHERE (e.name_lower IS NOT NULL AND e.name_lower CONTAINS toLower(targetTerm)) OR
-          (e.id_lower IS NOT NULL AND e.id_lower CONTAINS toLower(targetTerm))
-    WITH e, labels(e) AS entityTypes
-    ORDER BY entityTypes[0] ASC, size(e.name) ASC
+    CALL db.index.fulltext.queryNodes("entitySearchIndex", $targetTerm) YIELD node, score
+    WITH node, labels(node) AS entityTypes
     WITH entityTypes[0] AS entityType,
-        COLLECT(apoc.map.removeKeys(properties(e), $ignore_properties)) AS entities
+        COLLECT(apoc.map.removeKeys(properties(node), $ignore_properties)) AS entities
     WITH entityType, entities[0..5] AS topEntities
     RETURN entityType, topEntities;
     """
