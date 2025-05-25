@@ -189,19 +189,18 @@ async def search_biological_entities(
 ):
     """Search biological entities such as Gene, Protein, Disease, ChemicalEntity, Phenotype, Tissue, Anatomy, BiologicalProcess, MolecularFunction, CellularComponent, Pathway, Mutation, PMID, Species or PlantExtract by name or id"""
     # List of properties to exclude for optimization
-    ignore_properties = ["sequence", "seq", "type"]
+    ignore_properties = ["type", "id_lower", "name_lower"]
 
     query = """
     WITH $targetTerm AS targetTerm
     MATCH (e)
-    WHERE (e.name IS NOT NULL AND toLower(e.name) CONTAINS toLower(targetTerm)) OR
-          (e.id IS NOT NULL AND toLower(e.id) CONTAINS toLower(targetTerm)) OR
-          (e.alternativename IS NOT NULL AND toLower(e.alternativename) CONTAINS toLower(targetTerm))
+    WHERE (e.name_lower IS NOT NULL AND e.name_lower CONTAINS toLower(targetTerm)) OR
+          (e.id_lower IS NOT NULL AND e.id_lower CONTAINS toLower(targetTerm))
     WITH e, labels(e) AS entityTypes
     ORDER BY entityTypes[0] ASC, size(e.name) ASC
     WITH entityTypes[0] AS entityType,
         COLLECT(apoc.map.removeKeys(properties(e), $ignore_properties)) AS entities
-    WITH entityType, entities[0..3] AS topEntities
+    WITH entityType, entities[0..5] AS topEntities
     RETURN entityType, topEntities;
     """
 
