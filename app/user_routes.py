@@ -1,24 +1,24 @@
-from datetime import datetime  # Added for query limit reset
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi_limiter.depends import (
     RateLimiter,  # Corrected import path if necessary, or ensure it's available
 )
-from pydantic import EmailStr  # Added for email validation
+from pydantic import EmailStr
 from redis.asyncio import Redis
 
 from app.crud.user import (
     get_user_by_username,
-    update_user_openai_key,  # Added import
+    update_user_openai_key,
     update_user_query_limit_data,
 )
 from app.models.user import (
     AdminUserQueryLimitUpdate,
-    UserOpenAIKeyUpdate,  # Added import
+    UserOpenAIKeyUpdate,
     UserPublic,
     UserQueryLimitUpdate,
 )
-from app.utils.email_utils import send_welcome_email  # Added import
+from app.utils.email_utils import send_welcome_email
 from app.utils.environment import CONFIG
 from app.utils.redis_utils import get_redis_connection
 from app.utils.security import (
