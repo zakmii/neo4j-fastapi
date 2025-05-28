@@ -7,8 +7,17 @@ from fastapi_limiter.depends import (
 from pydantic import EmailStr  # Added for email validation
 from redis.asyncio import Redis
 
-from app.crud.user import get_user_by_username, update_user_query_limit_data
-from app.models.user import AdminUserQueryLimitUpdate, UserPublic, UserQueryLimitUpdate
+from app.crud.user import (
+    get_user_by_username,
+    update_user_openai_key,  # Added import
+    update_user_query_limit_data,
+)
+from app.models.user import (
+    AdminUserQueryLimitUpdate,
+    UserOpenAIKeyUpdate,  # Added import
+    UserPublic,
+    UserQueryLimitUpdate,
+)
 from app.utils.email_utils import send_welcome_email  # Added import
 from app.utils.environment import CONFIG
 from app.utils.redis_utils import get_redis_connection
@@ -149,3 +158,36 @@ async def send_welcome_email_route(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An unexpected error occurred: {str(e)}",
         )
+
+
+@router.put(
+    "/me/openai_api_key",
+    response_model=UserPublic,
+    dependencies=[Depends(RateLimiter(times=10, minutes=1))],
+)
+async def update_openai_api_key(
+    openai_key_data: UserOpenAIKeyUpdate,
+    current_user: UserPublic = Depends(get_current_active_user),
+    db: Redis = Depends(get_redis_connection),
+):
+    """
+    Update the OpenAI API key for the current logged-in user.
+    """
+    success = await update_user_openai_key(
+        db,
+        username=current_user.username,
+        openai_api_key=openai_key_data.OPENAI_API_KEY,
+    )
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found or update failed",
+        )
+
+    updated_user = await get_user_by_username(db, username=current_user.username)
+    if updated_user is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve updated user details",
+        )
+    return UserPublic.model_validate(updated_user)

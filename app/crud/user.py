@@ -54,3 +54,12 @@ async def update_user_query_limit_data(
         mapping={"query_limits": query_limits, "last_query_reset": last_query_reset},
     )
     return True
+
+
+async def update_user_openai_key(db: Redis, username: str, openai_api_key: str) -> bool:
+    """Updates the OpenAI API key for a user in Redis."""
+    user_key = f"user:{username}"
+    if not await db.exists(user_key):
+        return False  # User not found
+    await db.hset(user_key, mapping={"OPENAI_API_KEY": openai_api_key})
+    return True
