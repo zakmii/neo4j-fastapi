@@ -48,6 +48,10 @@ class UserQueryLimitUpdate(BaseModel):
     last_query_reset: datetime
 
 
+class UserOpenAIKeyUpdate(BaseModel):
+    OPENAI_API_KEY: str = Field(..., min_length=10)
+
+
 class AdminUserQueryLimitUpdate(BaseModel):
     admin_password: str
     new_query_limit: int
