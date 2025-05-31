@@ -200,8 +200,8 @@ async def search_biological_entities(
     # List of properties to exclude for optimization
     ignore_properties = ["type", "id_lower", "name_lower"]
 
-    # Currenly disabled fuzzy search as getting too many false positives
-    MIN_LENGTH_FOR_FUZZY_SEARCH = 0
+    # Minimum length for fuzzy search
+    # MIN_LENGTH_FOR_FUZZY_SEARCH = 5
 
     # Split on non-alphanumeric and apply fuzzy matching
     # Tokenize and filter out short/noisy tokens (length < 2)
@@ -212,10 +212,13 @@ async def search_biological_entities(
 
     processed_tokens = []
     for token in tokens:
-        if len(token) >= MIN_LENGTH_FOR_FUZZY_SEARCH:
-            processed_tokens.append(f"{token}~1")
-        else:
-            processed_tokens.append(token)
+        processed_tokens.append(token)
+
+        # currently removing the fuzzy search, but can be added back if needed
+        # if len(token) >= MIN_LENGTH_FOR_FUZZY_SEARCH:
+        #     processed_tokens.append(f"{token}~1")
+        # else:
+        #     processed_tokens.append(token)
 
     # Join with OR to allow partial matches
     processed_term = " AND ".join(processed_tokens)
