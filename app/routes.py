@@ -200,7 +200,8 @@ async def search_biological_entities(
     # List of properties to exclude for optimization
     ignore_properties = ["type", "id_lower", "name_lower"]
 
-    MIN_LENGTH_FOR_FUZZY_SEARCH = 3
+    # Currenly disabled fuzzy search as getting too many false positives
+    MIN_LENGTH_FOR_FUZZY_SEARCH = 0
 
     # Split on non-alphanumeric and apply fuzzy matching
     tokens = re.findall(r"\w+", targetTerm)
