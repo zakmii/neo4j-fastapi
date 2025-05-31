@@ -1,3 +1,4 @@
+import re
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -191,24 +192,31 @@ async def search_biological_entities(
     # List of properties to exclude for optimization
     ignore_properties = ["type", "id_lower", "name_lower"]
 
+    # Preprocess targetTerm: split on non-alphanumeric characters, then join with ' AND '
+    tokens = re.findall(r"\w+", targetTerm)
+    processed_term = " AND ".join(tokens)
+
     query = """
-    CALL db.index.fulltext.queryNodes("entitySearchIndex", $targetTerm) YIELD node, score
-    WITH node, labels(node) AS entityTypes
+    CALL db.index.fulltext.queryNodes("entitySearchIndex", $processed_term) YIELD node, score
+    WITH node, score, labels(node) AS entityTypes
     WITH entityTypes[0] AS entityType,
-        COLLECT(apoc.map.removeKeys(properties(node), $ignore_properties)) AS entities
+        COLLECT({properties: apoc.map.removeKeys(properties(node), $ignore_properties), lucene_score: score}) AS entities
     WITH entityType, entities[0..5] AS topEntities
     RETURN entityType, topEntities;
     """
 
     result = db.query(
         query,
-        parameters={"targetTerm": targetTerm, "ignore_properties": ignore_properties},
+        parameters={
+            "processed_term": processed_term,
+            "ignore_properties": ignore_properties,
+        },
     )
 
     if not result:
         raise HTTPException(
             status_code=404,
-            detail=f"No matching biological entities found for the term '{targetTerm}'",
+            detail=f"No matching biological entities found for the term '{processed_term}'",
         )
 
     response = [
