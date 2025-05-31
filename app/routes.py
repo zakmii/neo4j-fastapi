@@ -111,6 +111,9 @@ async def get_subgraph(
         description="Property name of the start node to search for",
     ),
     property_value: str = Query(..., description="Value of the property to search for"),
+    node_label: str = Query(
+        ..., description="Label of the start node to search for (e.g., Gene, Protein)"
+    ),
     db: Neo4jConnection = Depends(get_neo4j_connection),
 ):
     """Retrieve a subgraph of related nodes while limiting the connections to 10."""
@@ -126,8 +129,13 @@ async def get_subgraph(
         "description",
     ]
 
+    # Construct the MATCH clause using the provided node_label
+    match_clause = (
+        f"MATCH (n:{node_label} {{{property_name}: $property_value}})-[r]-(connected)"
+    )
+
     query = f"""
-    MATCH (n {{{property_name}: $property_value}})-[r]-(connected)
+    {match_clause}
     WITH n, r, connected
     RETURN
         apoc.map.removeKeys(properties(n), $ignore_properties_source) AS node_properties,
@@ -192,9 +200,20 @@ async def search_biological_entities(
     # List of properties to exclude for optimization
     ignore_properties = ["type", "id_lower", "name_lower"]
 
-    # Preprocess targetTerm: split on non-alphanumeric characters, then join with ' AND '
+    MIN_LENGTH_FOR_FUZZY_SEARCH = 3
+
+    # Split on non-alphanumeric and apply fuzzy matching
     tokens = re.findall(r"\w+", targetTerm)
-    processed_term = " AND ".join(tokens)
+
+    processed_tokens = []
+    for token in tokens:
+        if len(token) >= MIN_LENGTH_FOR_FUZZY_SEARCH:
+            processed_tokens.append(f"{token}~1")
+        else:
+            processed_tokens.append(token)
+
+    # Join with OR to allow partial matches
+    processed_term = " OR ".join(processed_tokens)
 
     query = """
     CALL db.index.fulltext.queryNodes("entitySearchIndex", $processed_term) YIELD node, score
