@@ -204,7 +204,11 @@ async def search_biological_entities(
     MIN_LENGTH_FOR_FUZZY_SEARCH = 0
 
     # Split on non-alphanumeric and apply fuzzy matching
-    tokens = re.findall(r"\w+", targetTerm)
+    # Tokenize and filter out short/noisy tokens (length < 2)
+    MAX_TOKENS = 200
+    tokens = [token for token in re.findall(r"\w+", targetTerm) if len(token) >= 2][
+        :MAX_TOKENS
+    ]
 
     processed_tokens = []
     for token in tokens:
@@ -214,7 +218,7 @@ async def search_biological_entities(
             processed_tokens.append(token)
 
     # Join with OR to allow partial matches
-    processed_term = " OR ".join(processed_tokens)
+    processed_term = " AND ".join(processed_tokens)
 
     query = """
     CALL db.index.fulltext.queryNodes("entitySearchIndex", $processed_term) YIELD node, score
